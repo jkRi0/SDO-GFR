@@ -1,0 +1,171 @@
+department/unit transacted
+	Admin
+		cash
+		personnel
+		records
+		supply
+		general services
+		procurement
+	ASDS (Assistant Schools Division Superintendent)
+	CID (Curriculum Implementation Division)
+		LRMS
+		Instructional Management
+		PSDS
+	Finance
+		Accounting
+		Budget
+	ICT
+	Legal
+	SDS (Schools Division Superintendent)
+	SGOD (School Governance and Operation Division)
+		M&E
+		SocMob
+		Planning & Research
+		HRD
+		Facilities
+		School Health
+		
+		
+		
+ON EXCEL
+	Id
+	Start time
+	Completion time
+	Email
+	Name
+	Language
+	Age
+	Sex
+	Customer Type
+	
+	Office transacted with
+		Service availed - SDS
+		
+		Service availed - ASDS
+		
+		
+	Office transacted with1
+		Service availed -  Cash, General Services, Procurement
+		
+		Service availed - Personnel
+		
+		Service availed - Property and Supply
+		
+		Service availed - Records
+		
+	
+	Office transacted with2
+		Service availed - CID
+	
+	Office transacted with3
+		Service availed - Accounting, Budget
+		Service availed - ICT
+		Service availed - Legal
+		
+	Office transacted with4
+		Service availed - SGOD
+		Service availed - SGOD (Private school-related)
+	
+	Are you aware of the Citizen's Charter - document of the SDO services and requirements?
+	Did you see the SDO Citizen's Charter (online or posted in the office)?
+	Did you use the SDO Citizen's Charter as a guide for the service you availed
+	Service Quality Dimension (SQD).SQD1 - I spent an acceptable amount of time to complete my transaction (Responsiveness)
+	Service Quality Dimension (SQD).SQD2 - The office accurately informed and followed the transaction's requirements and steps (Reliability)
+	Service Quality Dimension (SQD).SQD3 - My transaction (including steps and payment) was simple and convenient (Access and Facilities) 
+	Service Quality Dimension (SQD).SDQ4 - I easily found information about my transaction from the office or its website (Communication)
+	Service Quality Dimension (SQD).SQD5 - I paid an acceptable amount of fees for my transaction (Costs
+	Service Quality Dimension (SQD).SQD6 - I am confident my transaction was secure (Integrity)
+	Service Quality Dimension (SQD).SQD7 - The office's support was quick to respond (Assurance)
+	Service Quality Dimension (SQD).SQD8 - I got what I needed from the government office (Outcome)
+	Remarks
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+Service availed - SDS (distinct values)
+	Other requests/inquiries
+	Travel authority
+	Feedback/Complaint
+
+Service availed - ASDS (distinct values)
+	Other requests/inquiries
+
+Service availed - Cash, General Services, Procurement (distinct values)
+	General Services-related
+	Other requests/inquiries
+	Cash Advance
+	Procurement-related
+
+Service availed - Personnel (distinct values)
+	Other requests/inquiries
+	Loan Approval and Verification
+	Service Record
+	Appointment (new, promotion, transfer, etc.)
+	Application - Teaching Position
+	COE-Certificate of Employment
+	Application - Non-teaching/Teaching-related
+	Leave Application
+	Retirement
+
+Service availed - Property and Supply (distinct values)
+	Other requests/inquiries
+	Request/Issuance of Supplies
+
+Service availed - Records (distinct values)
+	CAV-Certification, Authentication, Verification
+	Other requests/inquiries
+	Receiving & releasing of documents
+	Certified True Copy (CTC)/Photocopy of documents
+
+Service availed - CID (distinct values)
+	Other requests/inquiries
+	Contextualized Learning Resources
+	ALS Enrollment
+	Borrowing of books/learning materials
+	Technical assistance
+	Instructional Supervision
+	Access to LR Portal
+	Quality Assurance of Supplementary Learning Resources
+
+Service availed - Accounting, Budget (distinct values)
+	Other requests/inquiries
+	Accounting-related
+	Posting/Updating of Disbursement
+	ORS-Obligation Request and Status
+
+Service availed - ICT (distinct values)
+	Create/delete/rename/reset user accounts
+	Troubleshooting of ICT equipment
+	Other requests/inquiries
+	Uploading of publications
+
+Service availed - Legal (distinct values)
+	Legal advice/opinion
+	Correction of Entries in School Record
+	Certificate of No Pending Case
+
+Service availed - SGOD (distinct values)
+	Other requests/inquiries
+	EBEIS/LIS/NAT Data and Performance Indicators
+	Basic Education Data
+	Private school-related
+
+Service availed - SGOD (Private school-related) (distinct values)
+	Other private school concerns
+	Private schools permit/recognition/renewal
+	Special Orders-graduation of private schools learners
+	No Increase in tuition/other school fees
+	Increase in tuition/other school fees (TOSF)

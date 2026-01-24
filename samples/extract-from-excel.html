@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   <title>Extract Data from Excel</title>
+   <style>
+      body {
+         font-family: Arial, sans-serif;
+         margin: 0;
+         background-color: #f5f5f5;
+      }
+
+      h1 {
+         margin-bottom: 10px;
+      }
+
+      .container {
+         background: #ffffff;
+         padding: 20px;
+         border-radius: 8px;
+         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      #fileInput {
+         margin: 10px 0 20px 0;
+      }
+
+      #status {
+         margin-bottom: 15px;
+         color: #555;
+         font-size: 0.95rem;
+      }
+
+      table {
+         border-collapse: collapse;
+         width: 100%;
+         max-width: 100%;
+         background-color: #fff;
+         table-layout: auto;
+      }
+
+      th, td {
+         border: 1px solid #ddd;
+         padding: 0;
+         font-size: 0.9rem;
+         white-space: nowrap;
+      }
+
+      th {
+         background-color: #007bff;
+         color: white;
+         position: sticky;
+         top: 0;
+         z-index: 1;
+      }
+
+      tbody tr:nth-child(even) {
+         background-color: #f9f9f9;
+      }
+
+      .table-wrapper {
+         max-height: 500px;
+         overflow: auto;
+         border: 1px solid #ddd;
+         border-radius: 4px;
+      }
+
+      .hidden {
+         display: none;
+      }
+
+      /* Vertical list of column headers */
+      .headers-list-container {
+         margin-top: 20px;
+      }
+
+      .headers-list-container h2 {
+         margin-bottom: 8px;
+         font-size: 1rem;
+      }
+
+      #headersList {
+         list-style: decimal;
+         padding-left: 20px;
+         margin: 0;
+      }
+
+      #headersList li {
+         margin-bottom: 2px;
+         font-size: 0.9rem;
+      }
+   </style>
+   <!-- SheetJS (XLSX) from CDN -->
+   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+   <div class="container">
+      <h1>Extract Data from Excel</h1>
+      <p>Select an Excel file ( .xlsx, .xls, .csv ) to read all data from the first sheet.</p>
+
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+      <div id="status">No file loaded.</div>
+
+      <div class="table-wrapper hidden" id="tableWrapper">
+         <table id="excelTable">
+            <thead></thead>
+            <tbody></tbody>
+         </table>
+      </div>
+
+      <div class="headers-list-container hidden" id="headersListContainer">
+         <h2>Column Headers (top to bottom)</h2>
+         <ol id="headersList"></ol>
+      </div>
+   </div>
+
+   <script>
+      const fileInput = document.getElementById('fileInput');
+      const statusEl = document.getElementById('status');
+      const tableWrapper = document.getElementById('tableWrapper');
+      const table = document.getElementById('excelTable');
+      const thead = table.querySelector('thead');
+      const tbody = table.querySelector('tbody');
+      const headersListContainer = document.getElementById('headersListContainer');
+      const headersList = document.getElementById('headersList');
+
+      fileInput.addEventListener('change', handleFile, false);
+
+      function handleFile(event) {
+         const file = event.target.files[0];
+         if (!file) {
+            statusEl.textContent = 'No file selected.';
+            tableWrapper.classList.add('hidden');
+            headersListContainer.classList.add('hidden');
+            return;
+         }
+
+         statusEl.textContent = `Reading file: ${file.name} ...`;
+
+         const reader = new FileReader();
+
+         reader.onload = function (e) {
+            const data = new Uint8Array(e.target.result);
+            try {
+               const workbook = XLSX.read(data, { type: 'array' });
+
+               // Get the first sheet name
+               const firstSheetName = workbook.SheetNames[0];
+               const worksheet = workbook.Sheets[firstSheetName];
+
+               // Convert sheet to JSON array of arrays
+               // header: 1  -> return rows as simple arrays
+               // defval: '' -> use empty string for empty cells
+               // raw: false -> use formatted text (e.g., proper dates/times) instead of raw numbers
+               const sheetData = XLSX.utils.sheet_to_json(worksheet, {
+                  header: 1,
+                  defval: '',
+                  raw: false
+               });
+
+               if (!sheetData || sheetData.length === 0) {
+                  statusEl.textContent = 'Sheet is empty.';
+                  tableWrapper.classList.add('hidden');
+                  headersListContainer.classList.add('hidden');
+                  return;
+               }
+
+               renderTable(sheetData);
+               statusEl.textContent = `Loaded sheet: ${firstSheetName} (${sheetData.length - 1} data rows)`;
+            } catch (err) {
+               console.error(err);
+               statusEl.textContent = 'Error reading file. Check console for details.';
+               tableWrapper.classList.add('hidden');
+            }
+         };
+
+         reader.onerror = function () {
+            statusEl.textContent = 'Failed to read file.';
+            tableWrapper.classList.add('hidden');
+            headersListContainer.classList.add('hidden');
+         };
+
+         reader.readAsArrayBuffer(file);
+      }
+
+      function renderTable(sheetData) {
+         // Clear any previous content
+         thead.innerHTML = '';
+         tbody.innerHTML = '';
+         headersList.innerHTML = '';
+
+         const headerRow = sheetData[0] || [];
+         const bodyRows = sheetData.slice(1);
+
+         // Render header
+         const trHead = document.createElement('tr');
+         headerRow.forEach((cellValue, index) => {
+            const th = document.createElement('th');
+            th.textContent = cellValue !== '' ? cellValue : `Column ${index + 1}`;
+            trHead.appendChild(th);
+         });
+         thead.appendChild(trHead);
+
+         // Render vertical list of headers below the table
+         headerRow.forEach((cellValue, index) => {
+            const li = document.createElement('li');
+            li.textContent = cellValue !== '' ? cellValue : `Column ${index + 1}`;
+            headersList.appendChild(li);
+         });
+
+         // Render body
+         bodyRows.forEach(row => {
+            const tr = document.createElement('tr');
+            headerRow.forEach((_, colIndex) => {
+               const td = document.createElement('td');
+               td.textContent = row[colIndex] !== undefined ? row[colIndex] : '';
+               tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+         });
+
+         tableWrapper.classList.remove('hidden');
+         headersListContainer.classList.remove('hidden');
+      }
+   </script>
+</body>
+</html>

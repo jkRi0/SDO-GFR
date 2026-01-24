@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sample PDF Generator</title>
+
+    <!-- Google Fonts for variety -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Roboto", Arial, sans-serif;
+        background: #f2f4f8;
+        color: #222;
+      }
+
+      .page-wrapper {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 24px 12px 40px;
+      }
+
+      .toolbar {
+        width: 100%;
+        max-width: 900px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        gap: 12px;
+      }
+
+      .toolbar-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+      }
+
+      .toolbar-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .toolbar button {
+        padding: 10px 18px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        background: #2563eb;
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+        transition: background 0.18s ease, transform 0.12s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .toolbar button:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+      }
+
+      .toolbar button:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+      }
+
+      .hint {
+        font-size: 0.8rem;
+        color: #4b5563;
+      }
+
+      /* A4-ish aspect container so what you see is close to what the PDF looks like */
+      #pdf-content {
+        width: 100%;
+        max-width: 800px;
+        background: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+        /* Slightly tighter padding so everything fits on one page */
+        padding: 18px 26px 20px;
+        display: flex;
+        flex-direction: column;
+        row-gap: 16px;
+        /* Keep PDF source off-screen: still rendered for jsPDF/html2canvas, not visible on page */
+        position: absolute;
+        left: -99999px;
+        top: 0;
+      }
+
+      .pdf-header-image {
+        text-align: center;
+        margin-bottom: 8px;
+      }
+
+      .pdf-header-image img {
+        max-width: 30%;
+        height: auto;
+      }
+
+      /* Header & footer design */
+      .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 3px solid #2563eb;
+        padding-bottom: 12px;
+        margin-bottom: 4px;
+      }
+
+      .brand-block {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-symbol {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #2563eb, #22c55e);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+      }
+
+      .brand-name {
+        font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .header-meta {
+        text-align: right;
+        font-size: 0.75rem;
+        color: #4b5563;
+      }
+
+      .header-meta strong {
+        display: block;
+        font-size: 0.8rem;
+        margin-bottom: 2px;
+      }
+
+      .report-footer {
+        border-top: 1px solid #e5e7eb;
+        margin-top: 6px;
+        padding-top: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.72rem;
+        color: #6b7280;
+      }
+
+      .report-footer .accent {
+        color: #2563eb;
+        font-weight: 600;
+      }
+
+      /* Main content sections */
+      .section-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: #1f2933;
+      }
+
+      .section {
+        padding: 10px 12px;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+      }
+
+      /* Sample text styles */
+      .text-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        /* gap: 1px 14px; */
+        font-size: 0.85rem;
+      }
+
+      .text-item-label {
+        display: block;
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-bottom: 2px;
+      }
+
+      .text-sample {
+        padding: 4px 6px;
+        border-radius: 4px;
+      }
+
+      .bg-soft-blue {
+        background-color: #e0edff;
+      }
+
+      .bg-soft-green {
+        background-color: #dcfce7;
+      }
+
+      .bg-soft-amber {
+        background-color: #fef3c7;
+      }
+
+      .bg-soft-rose {
+        background-color: #ffe4e6;
+      }
+
+      .font-display {
+        font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+      }
+
+      .font-roboto {
+        font-family: "Roboto", Arial, sans-serif;
+      }
+
+      .xl-text {
+        font-size: 1.3rem;
+      }
+
+      .sm-text {
+        font-size: 0.8rem;
+      }
+
+      .primary {
+        color: #1d4ed8;
+      }
+
+      .success {
+        color: #16a34a;
+      }
+
+      .danger {
+        color: #b91c1c;
+      }
+
+      /* Sample table */
+      table.sample-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+      }
+
+      .sample-table thead {
+        background: #2563eb;
+        color: #ffffff;
+      }
+
+      .sample-table th,
+      .sample-table td {
+        border: 1px solid #e5e7eb;
+        padding: 6px 8px;
+        text-align: left;
+      }
+
+      .sample-table tbody tr:nth-child(even) {
+        background: #f9fafb;
+      }
+
+      .sample-table tfoot td {
+        font-weight: 600;
+        background: #f3f4f6;
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: #e5e7eb;
+        color: #374151;
+      }
+
+      .tag-info {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      .tag-success {
+        background: #dcfce7;
+        color: #15803d;
+      }
+
+      .tag-warning {
+        background: #fef3c7;
+        color: #b45309;
+      }
+
+      .note {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-top: 8px;
+      }
+
+      @media (max-width: 640px) {
+        #pdf-content {
+          padding: 18px 16px 24px;
+        }
+
+        .report-header {
+          flex-direction: column;
+          gap: 8px;
+          align-items: flex-start;
+        }
+
+        .header-meta {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="page-wrapper">
+      <div class="toolbar">
+        <div>
+          <div class="toolbar-title">Sample PDF Generator</div>
+          <div class="hint">
+            The PDF will be generated from the styled content box below.
+          </div>
+        </div>
+        <div class="toolbar-actions">
+          <button id="preview-btn" type="button">Preview PDF</button>
+          <!-- <button id="download-btn" type="button">Download PDF</button> -->
+        </div>
+      </div>
+
+      <!-- This is the area that will be converted into a PDF -->
+      <div id="pdf-content">
+        <div class="pdf-header-image">
+          <img src="../assets/header.jpg" alt="Report Header" />
+        </div>
+        <!-- HEADER -->
+        <header class="report-header">
+          <div class="brand-block">
+            <div class="brand-symbol">SD</div>
+            <div>
+              <div class="brand-name">Sample Design Office</div>
+              <div style="font-size: 0.75rem; color: #6b7280">
+                PDF Layout / Header · Footer · Tables · Text Styles
+              </div>
+            </div>
+          </div>
+          <div class="header-meta">
+            <strong>Sample Feedback Report</strong>
+            <span>Date: <span id="today-date"></span></span>
+            <span>Generated by: Web PDF Demo</span>
+          </div>
+        </header>
+
+        <!-- SECTION: Text styles -->
+        <section class="section">
+          <div class="section-title">Text styles and formatting</div>
+          <div class="text-grid">
+            <div>
+              <span class="text-item-label">Normal text</span>
+              <div class="text-sample font-roboto">
+                This is a normal paragraph sample.
+              </div>
+            </div>
+
+            <div>
+              <span class="text-item-label">Bold</span>
+              <div class="text-sample font-roboto bg-soft-blue" style="font-weight: 700">
+                This text is bold.
+              </div>
+            </div>
+
+            <div>
+              <span class="text-item-label">Italic</span>
+              <div class="text-sample font-roboto" style="font-style: italic">
+                This text is italic.
+              </div>
+            </div>
+
+            <div>
+              <span class="text-item-label">Bold + Italic</span>
+              <div
+                class="text-sample bg-soft-green"
+                style="font-weight: 700; font-style: italic"
+              >
+                Bold and italic combined.
+              </div>
+            </div>
+
+            <div>
+              <span class="text-item-label">Display font family</span>
+              <div class="text-sample font-display bg-soft-amber">
+                Heading style using Playfair Display.
+              </div>
+            </div>
+
+            <div>
+              <span class="text-item-label">Primary color</span>
+              <div class="text-sample primary">
+                Text with a primary brand color.
+              </div>
+            </div>
+
+            <div>
+              <span class="text-item-label">Success color</span>
+              <div class="text-sample success bg-soft-green">
+                Text that indicates success.
+              </div>
+            </div>
+
+            <div>
+              <span class="text-item-label">Danger color</span>
+              <div class="text-sample danger bg-soft-rose">
+                Text that indicates an error or alert.
+              </div>
+            </div>
+
+            <div>
+              <span class="text-item-label">Extra large size</span>
+              <div class="text-sample xl-text font-display">
+                Section Title Example
+              </div>
+            </div>
+
+            <div>
+              <span class="text-item-label">Small size</span>
+              <div class="text-sample sm-text">
+                Small caption-style text.
+              </div>
+            </div>
+
+            <div>
+              <span class="text-item-label">Background color</span>
+              <div class="text-sample bg-soft-blue">
+                Text with a colored background.
+              </div>
+            </div>
+
+            <div>
+              <span class="text-item-label">Underline</span>
+              <div class="text-sample" style="text-decoration: underline">
+                Underlined text sample.
+              </div>
+            </div>
+          </div>
+          <p class="note">
+            This section is intentionally varied so you can see how different
+            fonts, sizes, and colors look once rendered in the PDF.
+          </p>
+        </section>
+
+        <!-- SECTION: Sample table -->
+        <section class="section">
+          <div class="section-title">Sample table with feedback scores</div>
+          <table class="sample-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Criteria</th>
+                <th>Score</th>
+                <th>Remarks</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Ana Santos</td>
+                <td>Clarity</td>
+                <td>4.5 / 5</td>
+                <td>Very clear and well-structured answers.</td>
+                <td><span class="tag tag-success">Excellent</span></td>
+              </tr>
+              <tr>
+                <td>Brian Lee</td>
+                <td>Completeness</td>
+                <td>3.8 / 5</td>
+                <td>Most points covered, a few details missing.</td>
+                <td><span class="tag tag-info">Good</span></td>
+              </tr>
+              <tr>
+                <td>Carla Cruz</td>
+                <td>Originality</td>
+                <td>4.1 / 5</td>
+                <td>Shows interesting and original ideas.</td>
+                <td><span class="tag tag-info">Good</span></td>
+              </tr>
+              <tr>
+                <td>David Ong</td>
+                <td>Technical Accuracy</td>
+                <td>3.2 / 5</td>
+                <td>Some minor mistakes that can be corrected.</td>
+                <td><span class="tag tag-warning">Needs review</span></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="5">
+                  Note: Values are for demonstration only and do not represent
+                  real data.
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </section>
+
+        <!-- SECTION: Body text block -->
+        <section class="section">
+          <div class="section-title">Summary comment block</div>
+          <p style="font-size: 0.9rem; line-height: 1.5">
+            The sample report layout above combines a custom header, footer,
+            styled table, and multiple text styles. You can use this as a
+            starting point when generating printable feedback summaries, grade
+            sheets, or certificates. Modify the text, colors, and fonts to
+            match your institution or project branding.
+          </p>
+          <p style="font-size: 0.85rem; line-height: 1.5">
+            For multi-page reports, you can repeat the header and footer
+            elements on each page or split the content into separate sections.
+            The library used here captures the visual layout, so what you see
+            in the preview is very similar to what will appear in the PDF.
+          </p>
+        </section>
+        <section class="section">
+          <div class="section-title">Summary comment block</div>
+          <p style="font-size: 0.9rem; line-height: 1.5">
+            The sample report layout above combines a custom header, footer,
+            styled table, and multiple text styles. You can use this as a
+            starting point when generating printable feedback summaries, grade
+            sheets, or certificates. Modify the text, colors, and fonts to
+            match your institution or project branding.
+          </p>
+          <p style="font-size: 0.85rem; line-height: 1.5">
+            For multi-page reports, you can repeat the header and footer
+            elements on each page or split the content into separate sections.
+            The library used here captures the visual layout, so what you see
+            in the preview is very similar to what will appear in the PDF.
+          </p>
+        </section>
+        <section class="section">
+          <div class="section-title">Summary comment block</div>
+          <p style="font-size: 0.9rem; line-height: 1.5">
+            The sample report layout above combines a custom header, footer,
+            styled table, and multiple text styles. You can use this as a
+            starting point when generating printable feedback summaries, grade
+            sheets, or certificates. Modify the text, colors, and fonts to
+            match your institution or project branding.
+          </p>
+          <p style="font-size: 0.85rem; line-height: 1.5">
+            For multi-page reports, you can repeat the header and footer
+            elements on each page or split the content into separate sections.
+            The library used here captures the visual layout, so what you see
+            in the preview is very similar to what will appear in the PDF.
+          </p>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="report-footer">
+          <span>
+            Sample output only ·
+            <span class="accent">not based on real records</span>
+          </span>
+          <span>Powered by jsPDF</span>
+        </footer>
+      </div>
+    </div>
+    <script src="./jspdf-generate.js"></script>
+    <!-- jsPDF bundle -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- html2canvas for rendering styled sections -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+
+    <script>
+      // Fill current date in header
+      (function () {
+        var dateSpan = document.getElementById("today-date");
+        if (dateSpan) {
+          var now = new Date();
+          var formatted = now.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+          });
+          dateSpan.textContent = formatted;
+        }
+      })();
+      // Preview PDF in a new tab using jsPDF
+      document.getElementById("preview-btn").addEventListener("click", function () {
+        window.generatePaginatedPdf({ preview: true });
+      });
+      // Directly download PDF using jsPDF
+    //   document.getElementById("download-btn").addEventListener("click", function () {
+    //     window.generatePaginatedPdf();
+    //   });
+    </script>
+  </body>
+</html>

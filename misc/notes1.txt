@@ -1,0 +1,13 @@
+POSSIBLE FUNCTIONS
+
+-report from the whole department; but it must be for each office
+-report from specific office on a certain department
+-overall report on a year
+-report for each month
+
+-try adding PWA
+-try to download the package for extraacting data on excel
+-
+
+
+//suggest to have a qr code printed for each department to scan and redirect to its evaluation form

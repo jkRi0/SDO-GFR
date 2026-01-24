@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   <title>Extract Data from Excel</title>
+   <link rel="stylesheet" href="styles.css" />
+   <!-- SheetJS (XLSX) from CDN -->
+   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+   <div class="container">
+      <div class="page-header">
+         <div class="page-header-main">
+            <h1>Extract Data from Excel</h1>
+            <p class="page-intro">Select an Excel file ( .xlsx, .xls, .csv ) to read all data from the first sheet.</p>
+         </div>
+
+         <div class="upload-panel">
+            <div class="upload-row">
+               <label class="file-label" for="fileInput">Upload Excel file</label>
+               <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+            </div>
+            <div id="status" class="status-text">No file loaded.</div>
+         </div>
+      </div>
+
+      <div class="table-wrapper hidden" id="tableWrapper">
+         <table id="excelTable">
+            <thead></thead>
+            <tbody></tbody>
+         </table>
+      </div>
+
+      <button id="previewModalBtn" class="preview-button hidden" type="button">Preview full sheet</button>
+      <button id="previewHeadersBtn" class="preview-button hidden" type="button">Preview headers</button>
+      <button id="viewAllReportsBtn" class="preview-button hidden" type="button">View all reports</button>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerSDS" data-office="SDS">
+         <div class="services-header">
+            <h2>Service availed in SDS (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListSDS"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerASDS" data-office="ASDS">
+         <div class="services-header">
+            <h2>Service availed in ASDS (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListASDS"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerCashGSP" data-office="Cash, General Services, Procurement">
+         <div class="services-header">
+            <h2>Service availed in Cash, General Services, Procurement (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListCashGSP"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerPersonnel" data-office="Personnel">
+         <div class="services-header">
+            <h2>Service availed in Personnel (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListPersonnel"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerPropertySupply" data-office="Property and Supply">
+         <div class="services-header">
+            <h2>Service availed in Property and Supply (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListPropertySupply"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerRecords" data-office="Records">
+         <div class="services-header">
+            <h2>Service availed in Records (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListRecords"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerCID" data-office="CID">
+         <div class="services-header">
+            <h2>Service availed in CID (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListCID"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerAccountingBudget" data-office="Accounting, Budget">
+         <div class="services-header">
+            <h2>Service availed in Accounting, Budget (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListAccountingBudget"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerICT" data-office="ICT">
+         <div class="services-header">
+            <h2>Service availed in ICT (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListICT"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerLegal" data-office="Legal">
+         <div class="services-header">
+            <h2>Service availed in Legal (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListLegal"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerSGOD" data-office="SGOD">
+         <div class="services-header">
+            <h2>Service availed in SGOD (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListSGOD"></ol>
+      </div>
+
+      <div class="services-list-container hidden office-report-section" id="servicesListContainerSGODPrivate" data-office="SGOD (Private school-related)">
+         <div class="services-header">
+            <h2>Service availed in SGOD (Private school-related) (distinct values)</h2>
+            <div class="services-actions">
+               <label>
+                  Rating period:
+                  <select class="rating-period">
+                     <option value="Jan-Dec">Whole year</option>
+                     <option value="january">January</option>
+                     <option value="february">February</option>
+                     <option value="march">March</option>
+                     <option value="april">April</option>
+                     <option value="may">May</option>
+                     <option value="june">June</option>
+                     <option value="july">July</option>
+                     <option value="august">August</option>
+                     <option value="september">September</option>
+                     <option value="october">October</option>
+                     <option value="november">November</option>
+                     <option value="december">December</option>
+                  </select>
+               </label>
+               <!-- Test button wired to generate.js PDF generator -->
+               <button type="button" class="view-report-button">View report</button>
+            </div>
+         </div>
+         <ol id="servicesListSGODPrivate"></ol>
+      </div>
+
+   </div>
+
+   <div id="previewModal" class="modal-overlay hidden">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h2>Excel sheet preview</h2>
+            <button id="closePreviewModal" class="close-modal" type="button">Close</button>
+         </div>
+         <div class="modal-body">
+            <div class="table-wrapper modal-table-wrapper">
+               <table id="excelTableModal">
+                  <thead></thead>
+                  <tbody></tbody>
+               </table>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <div id="headersPreviewModal" class="modal-overlay hidden">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h2>Column headers (top to bottom)</h2>
+            <button id="closeHeadersModal" class="close-modal" type="button">Close</button>
+         </div>
+         <div class="modal-body">
+            <div class="headers-list-container" id="headersListContainer">
+               <ol id="headersList"></ol>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <script src="scripts.js"></script>
+
+   <!-- jsPDF bundle must load before generate.js -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+   <!-- jsPDF AutoTable plugin for proper table layout -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+   <!-- html2canvas (kept for potential future use) -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+   <!-- PDF generator -->
+   <script src="generate.js"></script>
+
+   <script>
+      // Wire the test View report button to generate a PDF using generate.js
+      document.addEventListener('DOMContentLoaded', function () {
+         var btn = document.getElementById('preview-btn');
+         if (!btn) return;
+
+         btn.addEventListener('click', function () {
+            if (window.generatePaginatedPdf) {
+               window.generatePaginatedPdf({ preview: true });
+            } else {
+               alert('PDF generator is not loaded.');
+            }
+         });
+      });
+   </script>
+</body>
+</html>

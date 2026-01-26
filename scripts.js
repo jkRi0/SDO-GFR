@@ -848,7 +848,7 @@ function renderDistinctServices(headerRow, bodyRows) {
       }
    });
 
-   console.log('Service availed column indices:', serviceColIndices);
+   // console.log('Service availed column indices:', serviceColIndices);
 
    configs.forEach(({ container, list, officeName }) => {
       if (!container || !list) {
@@ -880,7 +880,7 @@ function renderDistinctServices(headerRow, bodyRows) {
                if (serviceValue !== undefined && serviceValue !== null && String(serviceValue).trim() !== '') {
                   const serviceName = String(serviceValue).trim();
                   uniqueServices.add(serviceName);
-                  console.log(`Row ${rowIndex + 2}, Office: ${officeName}, Service: "${serviceName}"`);
+                  // console.log(`Row ${rowIndex + 2}, Office: ${officeName}, Service: "${serviceName}"`);
                }
             });
          }
@@ -894,7 +894,7 @@ function renderDistinctServices(headerRow, bodyRows) {
          list.appendChild(li);
          container.classList.add('hidden');
       } else {
-         console.log(`Services found for ${officeName}:`, Array.from(uniqueServices));
+         // console.log(`Services found for ${officeName}:`, Array.from(uniqueServices));
          uniqueServices.forEach((service) => {
             const li = document.createElement('li');
 
@@ -934,7 +934,7 @@ function renderDistinctServices(headerRow, bodyRows) {
 }
 
 function displayOfficesFromTransactedColumns(headerRow, bodyRows) {
-   console.log('=== OFFICES FROM "Office transacted with" COLUMNS ===');
+   // console.log('=== OFFICES FROM "Office transacted with" COLUMNS ===');
    
    // Find all "Office transacted with" columns
    const officeColIndices = [];
@@ -947,7 +947,7 @@ function displayOfficesFromTransactedColumns(headerRow, bodyRows) {
       officeColIndices.push(colIndex);
    }
    
-   console.log('Office transacted with column indices:', officeColIndices);
+   // console.log('Office transacted with column indices:', officeColIndices);
    
    // Extract unique offices from all transacted columns
    const uniqueOffices = new Set();
@@ -959,17 +959,17 @@ function displayOfficesFromTransactedColumns(headerRow, bodyRows) {
             if (value !== undefined && value !== null && String(value).trim() !== '') {
                const officeName = String(value).trim();
                uniqueOffices.add(officeName);
-               console.log(`Row ${rowIndex + 2}, Office transacted with${colNumber + 1}: "${officeName}"`);
+               // console.log(`Row ${rowIndex + 2}, Office transacted with${colNumber + 1}: "${officeName}"`);
             }
          }
       });
    });
    
-   console.log('\n=== UNIQUE OFFICES FOUND ===');
-   console.log(`Total unique offices: ${uniqueOffices.size}`);
-   uniqueOffices.forEach((office, index) => {
-      console.log(`${index + 1}. "${office}"`);
-   });
+   // console.log('\n=== UNIQUE OFFICES FOUND ===');
+   // console.log(`Total unique offices: ${uniqueOffices.size}`);
+   // uniqueOffices.forEach((office, index) => {
+   //    console.log(`${index + 1}. "${office}"`);
+   // });
    
    // Also display in the status for user visibility
    if (statusEl && uniqueOffices.size > 0) {

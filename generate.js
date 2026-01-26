@@ -206,6 +206,11 @@
       tableLineWidth: 0.2,
       tableLineColor: 0,
       margin: { left: tableStartX, right: pageWidth - tableStartX - 120 },
+      columnStyles: {
+        1: { halign: 'center' }, // No. (Sex)
+        3: { halign: 'center' }, // No. (Age)
+        5: { halign: 'center' }, // No. (Customer Type)
+      },
     });
 
     // SECOND TABLE: Service Availed + Citizen's Charter in a single table
@@ -256,19 +261,15 @@
       return { label: '', yes: '', no: '', dns: '' };
     }
 
-    if (serviceRows.length === 0) {
-      // Fallback row when there are no respondents / no services
-      body2.push([
-        'No services availed',
-        0,
-        '',
-        '',
-        '',
-        '',
-      ]);
-    } else {
-      serviceRows.forEach((srv, idx) => {
-        const cc = getCcRowForIndex(idx);
+    // Set margin for 2nd table
+    const secondTableWidth = 140;
+    const secondTableMargin = (pageWidth - secondTableWidth) / 2;
+
+    // 2nd table row logic: always 3 rows if <3 services, else all services (first 3 paired with CCs)
+    if (serviceRows.length < 3) {
+      for (let i = 0; i < 3; i++) {
+        const srv = serviceRows[i] || { name: '', count: '' };
+        const cc = getCcRowForIndex(i);
         body2.push([
           srv.name,
           srv.count,
@@ -277,25 +278,29 @@
           cc.no,
           cc.dns,
         ]);
-      });
-
-      // Optional: total row for the No. (service counts) only
-      const totalServicesCount = serviceRows.reduce((sum, s) => sum + (s.count || 0), 0);
-      body2.push([
-        'Total',
-        totalServicesCount,
-        '',
-        '',
-        '',
-        '',
-      ]);
+      }
+    } else {
+      for (let i = 0; i < serviceRows.length; i++) {
+        const srv = serviceRows[i];
+        let cc = { label: '', yes: '', no: '', dns: '' };
+        if (i < 3) cc = getCcRowForIndex(i);
+        body2.push([
+          srv.name,
+          srv.count,
+          cc.label,
+          cc.yes,
+          cc.no,
+          cc.dns,
+        ]);
+      }
     }
-
-    // Make this table a bit wider than the first one so long text fits better.
-    // We'll give it an effective width of ~140mm and center it on the page
-    // by using symmetric left/right margins.
-    const secondTableWidth = 140;
-    const secondTableMargin = (pageWidth - secondTableWidth) / 2;
+    // Always add total row
+    const totalServicesCount = serviceRows.reduce((sum, s) => sum + (s.count || 0), 0);
+    body2.push([
+      'Total',
+      totalServicesCount,
+      '', '', '', '',
+    ]);
 
     doc.autoTable({
       startY: startY2,
@@ -324,6 +329,12 @@
       tableLineWidth: 0.2,
       tableLineColor: 0,
       margin: { left: secondTableMargin, right: secondTableMargin },
+      columnStyles: {
+        1: { halign: 'center' }, // No.
+        3: { halign: 'center' }, // Yes
+        4: { halign: 'center' }, // No
+        5: { halign: 'center' }, // Did Not Specify
+      },
     });
 
     // THIRD TABLE: CLIENT SATISFACTION (wider, more columns)

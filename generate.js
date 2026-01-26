@@ -357,11 +357,11 @@
 
     const head3 = [[
       'Survey',
-      'Strongly Agree (5)',
-      'Agree (4)',
-      'Neither Agree nor DisAgree (3)',
-      'Disagree (2)',
       'Strongly Disagree (1)',
+      'Disagree (2)',
+      'Neither Agree nor DisAgree (3)',
+      'Agree (4)',
+      'Strongly Agree (5)',
       'Not Applicable',
       'Total No. of Respondents',
       'Total Rated Score',
@@ -387,11 +387,11 @@
     } else {
       body3 = csRows.map((row) => [
         row.label,
-        row.sa5,
-        row.a4,
-        row.n3,
-        row.d2,
         row.sd1,
+        row.d2,
+        row.n3,
+        row.a4,
+        row.sa5,
         row.na,
         row.totalRespondents,
         row.totalRatedScore,

@@ -22,32 +22,46 @@ const closeHeadersModalBtn = document.getElementById('closeHeadersModal');
 
 // "View all reports" button (generate for all offices at once)
 const viewAllReportsBtn = document.getElementById('viewAllReportsBtn');
+// "View all service reports" button (one report per service per office)
+const viewAllServiceReportsBtn = document.getElementById('viewAllServiceReportsBtn');
 
-// Containers for distinct "Service availed - ..." values per office
-const servicesListContainerSDS = document.getElementById('servicesListContainerSDS');
-const servicesListSDS = document.getElementById('servicesListSDS');
-const servicesListContainerASDS = document.getElementById('servicesListContainerASDS');
-const servicesListASDS = document.getElementById('servicesListASDS');
-const servicesListContainerCashGSP = document.getElementById('servicesListContainerCashGSP');
-const servicesListCashGSP = document.getElementById('servicesListCashGSP');
+// Global filter elements
+const globalFilter = document.getElementById('globalFilter');
+const globalRatingPeriod = document.getElementById('globalRatingPeriod');
+
+// Containers for distinct offices found in "Office transacted with" columns
 const servicesListContainerPersonnel = document.getElementById('servicesListContainerPersonnel');
 const servicesListPersonnel = document.getElementById('servicesListPersonnel');
-const servicesListContainerPropertySupply = document.getElementById('servicesListContainerPropertySupply');
-const servicesListPropertySupply = document.getElementById('servicesListPropertySupply');
 const servicesListContainerRecords = document.getElementById('servicesListContainerRecords');
 const servicesListRecords = document.getElementById('servicesListRecords');
-const servicesListContainerCID = document.getElementById('servicesListContainerCID');
-const servicesListCID = document.getElementById('servicesListCID');
-const servicesListContainerAccountingBudget = document.getElementById('servicesListContainerAccountingBudget');
-const servicesListAccountingBudget = document.getElementById('servicesListAccountingBudget');
-const servicesListContainerICT = document.getElementById('servicesListContainerICT');
-const servicesListICT = document.getElementById('servicesListICT');
-const servicesListContainerLegal = document.getElementById('servicesListContainerLegal');
-const servicesListLegal = document.getElementById('servicesListLegal');
-const servicesListContainerSGOD = document.getElementById('servicesListContainerSGOD');
-const servicesListSGOD = document.getElementById('servicesListSGOD');
-const servicesListContainerSGODPrivate = document.getElementById('servicesListContainerSGODPrivate');
-const servicesListSGODPrivate = document.getElementById('servicesListSGODPrivate');
+const servicesListContainerAccounting = document.getElementById('servicesListContainerAccounting');
+const servicesListAccounting = document.getElementById('servicesListAccounting');
+const servicesListContainerCash = document.getElementById('servicesListContainerCash');
+const servicesListCash = document.getElementById('servicesListCash');
+const servicesListContainerGeneralServices = document.getElementById('servicesListContainerGeneralServices');
+const servicesListGeneralServices = document.getElementById('servicesListGeneralServices');
+const servicesListContainerPropertySupply = document.getElementById('servicesListContainerPropertySupply');
+const servicesListPropertySupply = document.getElementById('servicesListPropertySupply');
+const servicesListContainerProcurement = document.getElementById('servicesListContainerProcurement');
+const servicesListProcurement = document.getElementById('servicesListProcurement');
+const servicesListContainerHRD = document.getElementById('servicesListContainerHRD');
+const servicesListHRD = document.getElementById('servicesListHRD');
+const servicesListContainerLRMS = document.getElementById('servicesListContainerLRMS');
+const servicesListLRMS = document.getElementById('servicesListLRMS');
+const servicesListContainerInstructional = document.getElementById('servicesListContainerInstructional');
+const servicesListInstructional = document.getElementById('servicesListInstructional');
+const servicesListContainerPSDS = document.getElementById('servicesListContainerPSDS');
+const servicesListPSDS = document.getElementById('servicesListPSDS');
+const servicesListContainerSchoolHealth = document.getElementById('servicesListContainerSchoolHealth');
+const servicesListSchoolHealth = document.getElementById('servicesListSchoolHealth');
+const servicesListContainerPlanning = document.getElementById('servicesListContainerPlanning');
+const servicesListPlanning = document.getElementById('servicesListPlanning');
+const servicesListContainerSMME = document.getElementById('servicesListContainerSMME');
+const servicesListSMME = document.getElementById('servicesListSMME');
+const servicesListContainerSocMob = document.getElementById('servicesListContainerSocMob');
+const servicesListSocMob = document.getElementById('servicesListSocMob');
+const servicesListContainerEducationFacilities = document.getElementById('servicesListContainerEducationFacilities');
+const servicesListEducationFacilities = document.getElementById('servicesListEducationFacilities');
 
 // Keep the latest parsed sheet in memory so we can compute report totals later
 let currentHeaderRow = null;
@@ -66,6 +80,7 @@ if (previewHeadersBtn && headersPreviewModal && closeHeadersModalBtn) {
 setupOfficeReportButtons();
 restoreLastSheetFromStorage();
 setupViewAllReportsButton();
+setupViewAllServiceReportsButton();
 
 function handleFile(event) {
    const file = event.target.files[0];
@@ -214,6 +229,14 @@ function renderTableAndLists(sheetData) {
    if (viewAllReportsBtn) {
       viewAllReportsBtn.classList.remove('hidden');
    }
+
+   if (viewAllServiceReportsBtn) {
+      viewAllServiceReportsBtn.classList.remove('hidden');
+   }
+
+   if (globalFilter) {
+      globalFilter.classList.remove('hidden');
+   }
 }
 
 function restoreLastSheetFromStorage() {
@@ -235,7 +258,7 @@ function restoreLastSheetFromStorage() {
    }
 }
 
-function computeReportTotals(office, period) {
+function computeReportTotals(office, period, serviceName) {
    const totals = {
       sexMale: 0,
       sexFemale: 0,
@@ -298,39 +321,37 @@ function computeReportTotals(office, period) {
       dateColIndex = headerRow.findIndex((h) => h && String(h).toLowerCase().includes('date'));
    }
 
-   // Office-specific "Service availed - ..." column index
-   const officeMatchers = {
-      SDS: (text) => text.includes('service availed') && text.includes('sds'),
-      ASDS: (text) => text.includes('service availed') && text.includes('asds'),
-      'Cash, General Services, Procurement': (text) => text.includes('service availed') && text.includes('cash'),
-      Personnel: (text) => text.includes('service availed') && text.includes('personnel'),
-      'Property and Supply': (text) => text.includes('service availed') && text.includes('property and supply'),
-      Records: (text) => text.includes('service availed') && text.includes('records'),
-      CID: (text) => text.includes('service availed') && text.includes('cid'),
-      'Accounting, Budget': (text) => text.includes('service availed') && text.includes('accounting'),
-      ICT: (text) => text.includes('service availed') && text.includes('ict'),
-      Legal: (text) => text.includes('service availed') && text.includes('legal'),
-      SGOD: (text) => text.includes('service availed') && !text.includes('sgod (private') && text.includes('sgod'),
-      'SGOD (Private school-related)': (text) => text.includes('service availed') && text.includes('sgod (private'),
-   };
-
-   let officeColIndex = -1;
-   const officeMatcher = officeMatchers[office];
-   if (officeMatcher) {
-      officeColIndex = headerRow.findIndex((h) => {
+   // Office-specific matching using "Office transacted with" columns
+   const officeColIndices = [];
+   for (let i = 1; i <= 4; i++) {
+      const colIndex = headerRow.findIndex((h) => {
          if (!h) return false;
          const text = String(h).toLowerCase();
-         return officeMatcher(text);
+         return text.includes(`office transacted with${i}`);
       });
+      officeColIndices.push(colIndex);
    }
 
    function rowMatchesOffice(row) {
-      if (officeColIndex === -1) return true; // if we can't find the column, don't filter by office
-      const value = row[officeColIndex];
-      if (value === undefined || value === null) return false;
-      const trimmed = String(value).trim();
-      return trimmed !== '';
+      // Check if any of the "Office transacted with" columns match the target office
+      return officeColIndices.some((colIndex) => {
+         if (colIndex === -1) return false;
+         const value = row[colIndex];
+         if (value === undefined || value === null) return false;
+         const trimmed = String(value).trim();
+         return trimmed === office;
+      });
    }
+
+   // Find all "Service availed" columns (used for per-service breakdowns)
+   const serviceColIndices = [];
+   headerRow.forEach((header, index) => {
+      if (!header) return;
+      const text = String(header).toLowerCase();
+      if (text.includes('service availed')) {
+         serviceColIndices.push(index);
+      }
+   });
 
    function monthFromPeriod(p) {
       if (!p) return null;
@@ -444,23 +465,53 @@ function computeReportTotals(office, period) {
       return date.getMonth() === targetMonth;
    }
 
+   // For a given row, if it belongs to this office, collect all services in the
+   // "Service availed" columns for that row. Used both for listing services
+   // and for per-service filtering when serviceName is provided.
+   function getServicesForRow(row) {
+      if (!rowMatchesOffice(row) || !serviceColIndices.length) return [];
+      const services = [];
+      serviceColIndices.forEach((serviceColIndex) => {
+         const serviceValue = row[serviceColIndex];
+         if (serviceValue !== undefined && serviceValue !== null && String(serviceValue).trim() !== '') {
+            const service = String(serviceValue).trim();
+            services.push(service);
+         }
+      });
+      return services;
+   }
+
    bodyRows.forEach((row) => {
-      if (!rowMatchesOffice(row) || !rowMatchesPeriod(row)) {
+      if (!rowMatchesPeriod(row)) {
          return;
       }
 
-      // Count respondent for CC totals and service counts
+      if (!rowMatchesOffice(row)) {
+         return;
+      }
+
+      const servicesInRow = getServicesForRow(row);
+
+      // If we're generating a per-service report and this row doesn't contain
+      // that service, skip it entirely so demographics/CC/SQD are filtered too.
+      if (serviceName && !servicesInRow.includes(serviceName)) {
+         return;
+      }
+
+      // Count respondent for CC totals, demographics, etc. (already filtered
+      // by office, period, and optionally service).
       totalRespondents += 1;
 
-      // Service availed (based on office-specific column)
-      if (officeColIndex !== -1) {
-         const rawService = row[officeColIndex];
-         if (rawService !== undefined && rawService !== null) {
-            const serviceName = String(rawService).trim();
-            if (serviceName) {
-               const current = serviceCounts.get(serviceName) || 0;
-               serviceCounts.set(serviceName, current + 1);
-            }
+      // Service availed counts
+      if (servicesInRow.length) {
+         if (serviceName) {
+            const current = serviceCounts.get(serviceName) || 0;
+            serviceCounts.set(serviceName, current + 1);
+         } else {
+            servicesInRow.forEach((svc) => {
+               const current = serviceCounts.get(svc) || 0;
+               serviceCounts.set(svc, current + 1);
+            });
          }
       }
 
@@ -689,96 +740,149 @@ function classifySqdResponse(raw) {
 }
 
 function renderDistinctServices(headerRow, bodyRows) {
+   // First, let's extract and display offices from "Office transacted with" columns
+   displayOfficesFromTransactedColumns(headerRow, bodyRows);
+   
+   // Configuration for new offices based on actual data
    const configs = [
-      {
-         container: servicesListContainerSDS,
-         list: servicesListSDS,
-         match: (text) => text.includes('service availed') && text.includes('sds'),
-      },
-      {
-         container: servicesListContainerASDS,
-         list: servicesListASDS,
-         match: (text) => text.includes('service availed') && text.includes('asds'),
-      },
-      {
-         container: servicesListContainerCashGSP,
-         list: servicesListCashGSP,
-         match: (text) => text.includes('service availed') && text.includes('cash'),
-      },
       {
          container: servicesListContainerPersonnel,
          list: servicesListPersonnel,
-         match: (text) => text.includes('service availed') && text.includes('personnel'),
-      },
-      {
-         container: servicesListContainerPropertySupply,
-         list: servicesListPropertySupply,
-         match: (text) => text.includes('service availed') && text.includes('property and supply'),
+         officeName: 'Personnel',
       },
       {
          container: servicesListContainerRecords,
          list: servicesListRecords,
-         match: (text) => text.includes('service availed') && text.includes('records'),
+         officeName: 'Records',
       },
       {
-         container: servicesListContainerCID,
-         list: servicesListCID,
-         match: (text) => text.includes('service availed') && text.includes('cid'),
+         container: servicesListContainerAccounting,
+         list: servicesListAccounting,
+         officeName: 'Accounting',
       },
       {
-         container: servicesListContainerAccountingBudget,
-         list: servicesListAccountingBudget,
-         match: (text) => text.includes('service availed') && text.includes('accounting'),
+         container: servicesListContainerCash,
+         list: servicesListCash,
+         officeName: 'Cash',
       },
       {
-         container: servicesListContainerICT,
-         list: servicesListICT,
-         match: (text) => text.includes('service availed') && text.includes('ict'),
+         container: servicesListContainerGeneralServices,
+         list: servicesListGeneralServices,
+         officeName: 'General Services',
       },
       {
-         container: servicesListContainerLegal,
-         list: servicesListLegal,
-         match: (text) => text.includes('service availed') && text.includes('legal'),
+         container: servicesListContainerPropertySupply,
+         list: servicesListPropertySupply,
+         officeName: 'Property and Supply',
       },
       {
-         container: servicesListContainerSGOD,
-         list: servicesListSGOD,
-         match: (text) => text.includes('service availed') && text.includes('sgod (') === false && text.includes('sgod'),
+         container: servicesListContainerProcurement,
+         list: servicesListProcurement,
+         officeName: 'Procurement',
       },
       {
-         container: servicesListContainerSGODPrivate,
-         list: servicesListSGODPrivate,
-         match: (text) => text.includes('service availed') && text.includes('sgod (private'),
+         container: servicesListContainerHRD,
+         list: servicesListHRD,
+         officeName: 'HRD - Human Resource Development',
+      },
+      {
+         container: servicesListContainerLRMS,
+         list: servicesListLRMS,
+         officeName: 'LRMS - Learning Resource Management Section',
+      },
+      {
+         container: servicesListContainerInstructional,
+         list: servicesListInstructional,
+         officeName: 'Instructional Management Section',
+      },
+      {
+         container: servicesListContainerPSDS,
+         list: servicesListPSDS,
+         officeName: 'PSDS - Public School District Supervisor',
+      },
+      {
+         container: servicesListContainerSchoolHealth,
+         list: servicesListSchoolHealth,
+         officeName: 'School Health',
+      },
+      {
+         container: servicesListContainerPlanning,
+         list: servicesListPlanning,
+         officeName: 'Planning & Research',
+      },
+      {
+         container: servicesListContainerSMME,
+         list: servicesListSMME,
+         officeName: 'SMME - School Management Monitoring and Evaluation Section',
+      },
+      {
+         container: servicesListContainerSocMob,
+         list: servicesListSocMob,
+         officeName: 'SocMob - Social Mobilization and Networking',
+      },
+      {
+         container: servicesListContainerEducationFacilities,
+         list: servicesListEducationFacilities,
+         officeName: 'Education Facilities',
       },
    ];
 
-   configs.forEach(({ container, list, match }) => {
+   // Find all "Office transacted with" columns
+   const officeColIndices = [];
+   for (let i = 1; i <= 4; i++) {
+      const colIndex = headerRow.findIndex((header) => {
+         if (!header) return false;
+         const text = String(header).toLowerCase();
+         return text.includes(`office transacted with${i}`);
+      });
+      officeColIndices.push(colIndex);
+   }
+
+   // Find all "Service availed" columns
+   const serviceColIndices = [];
+   headerRow.forEach((header, index) => {
+      if (!header) return;
+      const text = String(header).toLowerCase();
+      if (text.includes('service availed')) {
+         serviceColIndices.push(index);
+      }
+   });
+
+   console.log('Service availed column indices:', serviceColIndices);
+
+   configs.forEach(({ container, list, officeName }) => {
       if (!container || !list) {
          return;
       }
 
-      // Find matching column index
-      const colIndex = headerRow.findIndex((headerCell) => {
-         if (!headerCell) return false;
-         const text = String(headerCell).toLowerCase();
-         return match(text);
-      });
-
-      if (colIndex === -1) {
-         container.classList.add('hidden');
-         list.innerHTML = '';
-         return;
-      }
-
+      // Extract services for this specific office
       const uniqueServices = new Set();
-
-      bodyRows.forEach((row) => {
-         const value = row[colIndex];
-         if (value !== undefined && value !== null) {
-            const trimmed = String(value).trim();
-            if (trimmed) {
-               uniqueServices.add(trimmed);
+      
+      bodyRows.forEach((row, rowIndex) => {
+         // Check if this row contains transactions for our target office
+         let hasOfficeTransaction = false;
+         officeColIndices.forEach((colIndex) => {
+            if (colIndex !== -1) {
+               const value = row[colIndex];
+               if (value !== undefined && value !== null && String(value).trim() !== '') {
+                  const officeInCell = String(value).trim();
+                  if (officeInCell === officeName) {
+                     hasOfficeTransaction = true;
+                  }
+               }
             }
+         });
+
+         // If this row has a transaction for our office, extract the services
+         if (hasOfficeTransaction) {
+            serviceColIndices.forEach((serviceColIndex) => {
+               const serviceValue = row[serviceColIndex];
+               if (serviceValue !== undefined && serviceValue !== null && String(serviceValue).trim() !== '') {
+                  const serviceName = String(serviceValue).trim();
+                  uniqueServices.add(serviceName);
+                  console.log(`Row ${rowIndex + 2}, Office: ${officeName}, Service: "${serviceName}"`);
+               }
+            });
          }
       });
 
@@ -786,18 +890,92 @@ function renderDistinctServices(headerRow, bodyRows) {
 
       if (uniqueServices.size === 0) {
          const li = document.createElement('li');
-         li.textContent = 'No service values found in this sheet.';
+         li.textContent = `No services found for ${officeName}.`;
          list.appendChild(li);
+         container.classList.add('hidden');
       } else {
+         console.log(`Services found for ${officeName}:`, Array.from(uniqueServices));
          uniqueServices.forEach((service) => {
             const li = document.createElement('li');
-            li.textContent = service;
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'view-service-report-button';
+            btn.textContent = 'View report';
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'service-name';
+            nameSpan.textContent = service;
+
+            btn.addEventListener('click', () => {
+               if (typeof window.generatePaginatedPdf !== 'function') {
+                  alert('PDF generator is not loaded.');
+                  return;
+               }
+
+               const period = globalRatingPeriod ? globalRatingPeriod.value : 'Jan-Dec';
+               const totals = computeReportTotals(officeName, period, service);
+
+               window.generatePaginatedPdf({
+                  preview: true,
+                  office: officeName,
+                  period,
+                  totals,
+               });
+            });
+
+            li.appendChild(btn);
+            li.appendChild(nameSpan);
             list.appendChild(li);
          });
+         container.classList.remove('hidden');
       }
-
-      container.classList.remove('hidden');
    });
+}
+
+function displayOfficesFromTransactedColumns(headerRow, bodyRows) {
+   console.log('=== OFFICES FROM "Office transacted with" COLUMNS ===');
+   
+   // Find all "Office transacted with" columns
+   const officeColIndices = [];
+   for (let i = 1; i <= 4; i++) {
+      const colIndex = headerRow.findIndex((header) => {
+         if (!header) return false;
+         const text = String(header).toLowerCase();
+         return text.includes(`office transacted with${i}`);
+      });
+      officeColIndices.push(colIndex);
+   }
+   
+   console.log('Office transacted with column indices:', officeColIndices);
+   
+   // Extract unique offices from all transacted columns
+   const uniqueOffices = new Set();
+   
+   bodyRows.forEach((row, rowIndex) => {
+      officeColIndices.forEach((colIndex, colNumber) => {
+         if (colIndex !== -1) {
+            const value = row[colIndex];
+            if (value !== undefined && value !== null && String(value).trim() !== '') {
+               const officeName = String(value).trim();
+               uniqueOffices.add(officeName);
+               console.log(`Row ${rowIndex + 2}, Office transacted with${colNumber + 1}: "${officeName}"`);
+            }
+         }
+      });
+   });
+   
+   console.log('\n=== UNIQUE OFFICES FOUND ===');
+   console.log(`Total unique offices: ${uniqueOffices.size}`);
+   uniqueOffices.forEach((office, index) => {
+      console.log(`${index + 1}. "${office}"`);
+   });
+   
+   // Also display in the status for user visibility
+   if (statusEl && uniqueOffices.size > 0) {
+      const currentStatus = statusEl.textContent;
+      statusEl.textContent = `${currentStatus} | Found ${uniqueOffices.size} unique offices in transacted columns`;
+   }
 }
 
 function setupViewAllReportsButton() {
@@ -809,8 +987,8 @@ function setupViewAllReportsButton() {
          return;
       }
 
-      // Use "Jan-Dec" (whole year) for all offices, no month filter
-      const period = 'Jan-Dec';
+      // Use the global rating period filter (fall back to Jan-Dec if missing)
+      const period = globalRatingPeriod ? globalRatingPeriod.value : 'Jan-Dec';
 
       const sections = document.querySelectorAll('.office-report-section');
       if (!sections.length) {
@@ -840,20 +1018,76 @@ function setupViewAllReportsButton() {
    });
 }
 
+function setupViewAllServiceReportsButton() {
+   if (!viewAllServiceReportsBtn) return;
+
+   viewAllServiceReportsBtn.addEventListener('click', () => {
+      if (typeof window.generatePaginatedPdf !== 'function') {
+         alert('PDF generator is not loaded.');
+         return;
+      }
+
+      const period = globalRatingPeriod ? globalRatingPeriod.value : 'Jan-Dec';
+
+      const sections = document.querySelectorAll('.office-report-section');
+      if (!sections.length) {
+         alert('No offices found to generate service reports for.');
+         return;
+      }
+
+      const multiOffices = [];
+
+      sections.forEach((section) => {
+         const office = section.getAttribute('data-office') || '';
+         if (!office) return;
+
+         const serviceItems = section.querySelectorAll('li');
+         serviceItems.forEach((li) => {
+            const nameSpan = li.querySelector('.service-name');
+            if (!nameSpan) return;
+
+            const serviceName = nameSpan.textContent.trim();
+            if (!serviceName || serviceName.startsWith('No services found')) return;
+
+            const totals = computeReportTotals(office, period, serviceName);
+            multiOffices.push({
+               office,
+               period,
+               totals,
+            });
+         });
+      });
+
+      if (!multiOffices.length) {
+         alert('No services found to generate reports for.');
+         return;
+      }
+
+      window.generatePaginatedPdf({
+         preview: true,
+         multiOffices,
+      });
+   });
+}
+
 function hideAllServiceContainers() {
    const containers = [
-      servicesListContainerSDS,
-      servicesListContainerASDS,
-      servicesListContainerCashGSP,
       servicesListContainerPersonnel,
-      servicesListContainerPropertySupply,
       servicesListContainerRecords,
-      servicesListContainerCID,
-      servicesListContainerAccountingBudget,
-      servicesListContainerICT,
-      servicesListContainerLegal,
-      servicesListContainerSGOD,
-      servicesListContainerSGODPrivate,
+      servicesListContainerAccounting,
+      servicesListContainerCash,
+      servicesListContainerGeneralServices,
+      servicesListContainerPropertySupply,
+      servicesListContainerProcurement,
+      servicesListContainerHRD,
+      servicesListContainerLRMS,
+      servicesListContainerInstructional,
+      servicesListContainerPSDS,
+      servicesListContainerSchoolHealth,
+      servicesListContainerPlanning,
+      servicesListContainerSMME,
+      servicesListContainerSocMob,
+      servicesListContainerEducationFacilities,
    ];
 
    containers.forEach((c) => {
@@ -867,18 +1101,17 @@ function setupOfficeReportButtons() {
    const sections = document.querySelectorAll('.office-report-section');
    sections.forEach((section) => {
       const button = section.querySelector('.view-report-button');
-      const select = section.querySelector('.rating-period');
-      if (!button || !select) return;
+      if (!button) return;
 
       const office = section.getAttribute('data-office') || '';
 
       button.addEventListener('click', () => {
-         const period = select.value;
          if (typeof window.generatePaginatedPdf !== 'function') {
             alert('PDF generator is not loaded.');
             return;
          }
 
+         const period = globalRatingPeriod ? globalRatingPeriod.value : 'Jan-Dec';
          const totals = computeReportTotals(office, period);
 
          window.generatePaginatedPdf({

@@ -6,6 +6,11 @@ body {
    height: 95vh;
 }
 
+/* Group top preview buttons nicely in a row */
+.preview-button + .preview-button {
+   margin-left: 8px;
+}
+
 h1 {
    margin-bottom: 4px;
    font-size: 1.9rem;
@@ -133,7 +138,7 @@ tbody tr:nth-child(even) {
 
 .preview-button {
    margin-top: 10px;
-   padding: 7px 14px;
+   padding: 7px 16px;
    background: linear-gradient(135deg, #0ea5e9, #2563eb);
    color: #fff;
    border: none;
@@ -165,7 +170,7 @@ tbody tr:nth-child(even) {
 /* Distinct services list (Service availed - SDS) */
 .services-list-container {
    margin-top: 20px;
-   padding: 16px 18px;
+   padding: 16px 18px 14px 18px;
    border-radius: 10px;
    border: 1px solid rgba(148, 163, 184, 0.4);
    background: linear-gradient(135deg, #f9fafb, #ffffff);
@@ -223,12 +228,70 @@ tbody tr:nth-child(even) {
 .services-list-container ol {
    list-style: decimal;
    padding-left: 20px;
-   margin: 0;
+   margin: 4px 0 0 0;
 }
 
 .services-list-container li {
-   margin-bottom: 2px;
+   margin-bottom: 4px;
    font-size: 0.9rem;
+   display: flex;
+   align-items: center;
+   gap: 8px;
+}
+
+.services-list-container li .service-name {
+   flex: 1;
+}
+
+.view-service-report-button {
+   padding: 4px 10px;
+   background: #f3f4ff;
+   color: #1d4ed8;
+   border: 1px solid rgba(129, 140, 248, 0.7);
+   border-radius: 999px;
+   cursor: pointer;
+   font-size: 0.78rem;
+   font-weight: 500;
+   white-space: nowrap;
+   transition: background-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+}
+
+.view-service-report-button:hover {
+   background: #e0e7ff;
+   color: #1e3a8a;
+   box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+   transform: translateY(-0.5px);
+}
+
+/* Global rating-period filter row styling */
+.global-filter {
+   margin-top: 14px;
+   margin-bottom: 8px;
+   padding: 8px 12px;
+   border-radius: 999px;
+   display: inline-flex;
+   align-items: center;
+   gap: 8px;
+   background: rgba(239, 246, 255, 0.9);
+   border: 1px solid rgba(191, 219, 254, 0.9);
+}
+
+.global-filter label {
+   font-size: 0.9rem;
+   font-weight: 500;
+   color: #1e40af;
+   display: flex;
+   align-items: center;
+   gap: 6px;
+}
+
+#globalRatingPeriod.rating-period {
+   padding: 4px 12px;
+   border-radius: 999px;
+   border: 1px solid #bfdbfe;
+   background-color: #ffffff;
+   font-size: 0.88rem;
+   color: #1f2937;
 }
 
 /* Full-page modal for Excel preview */

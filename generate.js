@@ -84,8 +84,7 @@
 
     // Content block width (office line + table) for centering the table.
     // We keep the table at ~120mm wide, centered, but allow the office/period
-    // line to use almost the full page width to avoid overlap when the
-    // office name is long.
+    // line to use almost the full page width.
     const contentWidth = 120; // table area width in mm
     const contentLeft = (pageWidth - contentWidth) / 2;
 
@@ -96,21 +95,51 @@
     // Use a wider left margin than the table so there's more room.
     const officeLineLeftMargin = 15;
     const leftX = officeLineLeftMargin;
-    doc.text(officeLabel + officeValue, leftX, y);
+
+    const officeText = officeLabel + officeValue;
     const officeLabelWidth = doc.getTextWidth(officeLabel);
     const officeValueWidth = doc.getTextWidth(officeValue);
-    const officeValueStartX = leftX + officeLabelWidth;
-    doc.line(officeValueStartX, y + 1.5, officeValueStartX + officeValueWidth, y + 1.5);
+    const officeTextWidth = officeLabelWidth + officeValueWidth;
 
-    // Right side: rating period
-    const periodLine = periodLabel + periodValue;
-    const periodLineWidth = doc.getTextWidth(periodLine);
+    const periodText = periodLabel + periodValue;
+    const periodTextWidth = doc.getTextWidth(periodText);
+    const periodLabelWidth = doc.getTextWidth(periodLabel);
+    const periodValueWidth = doc.getTextWidth(periodValue);
     const officeLineRightMargin = 15;
-    const rightX = pageWidth - officeLineRightMargin - periodLineWidth;
-    doc.text(periodLine, rightX, y);
 
-    // Add a bit more space before the table
-    y += 5;
+    // If office + period would overlap, move period to the next line.
+    const totalNeededWidth = officeLineLeftMargin + officeTextWidth + periodTextWidth + officeLineRightMargin;
+    if (totalNeededWidth <= pageWidth) {
+      // Single-line layout: office on left, rating period on right
+      doc.text(officeText, leftX, y);
+      const officeValueStartX = leftX + officeLabelWidth;
+      doc.line(officeValueStartX, y + 1.5, officeValueStartX + officeValueWidth, y + 1.5);
+
+      const rightX = pageWidth - officeLineRightMargin - periodTextWidth;
+      doc.text(periodText, rightX, y);
+
+      // Underline the rating period value (e.g., Jan-Dec)
+      const periodValueStartX = rightX + periodLabelWidth;
+      doc.line(periodValueStartX, y + 1.5, periodValueStartX + periodValueWidth, y + 1.5);
+
+      y += 5;
+    } else {
+      // Two-line layout: office on first line, rating period directly under it (left-aligned)
+      doc.text(officeText, leftX, y);
+      const officeValueStartX = leftX + officeLabelWidth;
+      doc.line(officeValueStartX, y + 1.5, officeValueStartX + officeValueWidth, y + 1.5);
+
+      // Move down for the period line and print it under the office text
+      y += 5;
+      doc.text(periodText, leftX, y);
+
+      // Underline the rating period value when wrapped
+      const periodValueStartXWrapped = leftX + periodLabelWidth;
+      doc.line(periodValueStartXWrapped, y + 1.5, periodValueStartXWrapped + periodValueWidth, y + 1.5);
+
+      // Extra space before the table when wrapped
+      y += 4;
+    }
 
     // Summary table
     doc.setFontSize(10);
@@ -183,51 +212,61 @@
     const serviceRows = Array.isArray(totals.serviceRows) ? totals.serviceRows : [];
     const ccTotals = totals.ccTotals || null;
 
-    if (serviceRows.length) {
-      const firstTableBottomY = (doc.lastAutoTable && doc.lastAutoTable.finalY) || (y + 20);
-      const startY2 = firstTableBottomY + 6;
+    const firstTableBottomY = (doc.lastAutoTable && doc.lastAutoTable.finalY) || (y + 20);
+    const startY2 = firstTableBottomY + 6;
 
-      const head2 = [[
-        'Service availed',
-        'No.',
-        "Citizen's Charter",
-        'Yes',
-        'No',
-        'Did Not Specify',
-      ]];
+    const head2 = [[
+      'Service availed',
+      'No.',
+      "Citizen's Charter",
+      'Yes',
+      'No',
+      'Did Not Specify',
+    ]];
 
-      const body2 = [];
+    const body2 = [];
 
-      // Helper to get CC row data by index 0->CC1, 1->CC2, 2->CC3
-      function getCcRowForIndex(idx) {
-        if (!ccTotals) return { label: '', yes: '', no: '', dns: '' };
-        if (idx === 0 && ccTotals.cc1) {
-          return {
-            label: 'CC1',
-            yes: ccTotals.cc1.yes,
-            no: ccTotals.cc1.no,
-            dns: ccTotals.cc1.didNotSpecify,
-          };
-        }
-        if (idx === 1 && ccTotals.cc2) {
-          return {
-            label: 'CC2',
-            yes: ccTotals.cc2.yes,
-            no: ccTotals.cc2.no,
-            dns: ccTotals.cc2.didNotSpecify,
-          };
-        }
-        if (idx === 2 && ccTotals.cc3) {
-          return {
-            label: 'CC3',
-            yes: ccTotals.cc3.yes,
-            no: ccTotals.cc3.no,
-            dns: ccTotals.cc3.didNotSpecify,
-          };
-        }
-        return { label: '', yes: '', no: '', dns: '' };
+    // Helper to get CC row data by index 0->CC1, 1->CC2, 2->CC3
+    function getCcRowForIndex(idx) {
+      if (!ccTotals) return { label: '', yes: '', no: '', dns: '' };
+      if (idx === 0 && ccTotals.cc1) {
+        return {
+          label: 'CC1',
+          yes: ccTotals.cc1.yes,
+          no: ccTotals.cc1.no,
+          dns: ccTotals.cc1.didNotSpecify,
+        };
       }
+      if (idx === 1 && ccTotals.cc2) {
+        return {
+          label: 'CC2',
+          yes: ccTotals.cc2.yes,
+          no: ccTotals.cc2.no,
+          dns: ccTotals.cc2.didNotSpecify,
+        };
+      }
+      if (idx === 2 && ccTotals.cc3) {
+        return {
+          label: 'CC3',
+          yes: ccTotals.cc3.yes,
+          no: ccTotals.cc3.no,
+          dns: ccTotals.cc3.didNotSpecify,
+        };
+      }
+      return { label: '', yes: '', no: '', dns: '' };
+    }
 
+    if (serviceRows.length === 0) {
+      // Fallback row when there are no respondents / no services
+      body2.push([
+        'No services availed',
+        0,
+        '',
+        '',
+        '',
+        '',
+      ]);
+    } else {
       serviceRows.forEach((srv, idx) => {
         const cc = getCcRowForIndex(idx);
         body2.push([
@@ -250,198 +289,211 @@
         '',
         '',
       ]);
-
-      // Make this table a bit wider than the first one so long text fits better.
-      // We'll give it an effective width of ~140mm and center it on the page
-      // by using symmetric left/right margins.
-      const secondTableWidth = 140;
-      const secondTableMargin = (pageWidth - secondTableWidth) / 2;
-
-      doc.autoTable({
-        startY: startY2,
-        head: head2,
-        body: body2,
-        theme: 'grid',
-        styles: {
-          fontSize: 8,
-          halign: 'left',
-          valign: 'middle',
-          cellPadding: 0.8,
-          fillColor: [255, 255, 255],
-          textColor: 0,
-          lineColor: 0,
-          lineWidth: 0.1,
-        },
-        headStyles: {
-          fontStyle: 'bold',
-          halign: 'center',
-          fillColor: [255, 255, 255],
-          textColor: 0,
-        },
-        alternateRowStyles: {
-          fillColor: [255, 255, 255],
-        },
-        tableLineWidth: 0.2,
-        tableLineColor: 0,
-        margin: { left: secondTableMargin, right: secondTableMargin },
-      });
-
-      // THIRD TABLE: CLIENT SATISFACTION (wider, more columns)
-      const csRows = Array.isArray(totals.clientSatisfactionRows)
-        ? totals.clientSatisfactionRows
-        : [];
-
-      // Only draw if we have at least some rows configured
-      if (csRows.length) {
-        const secondTableBottomY = (doc.lastAutoTable && doc.lastAutoTable.finalY) || (startY2 + 20);
-        const startY3 = secondTableBottomY + 8;
-
-        // Title above the table
-        const csTitle = 'CLIENT SATISFACTION';
-        doc.setFontSize(11);
-        doc.setFont(undefined, 'bold');
-        const csTitleWidth = doc.getTextWidth(csTitle);
-        const csTitleX = (pageWidth - csTitleWidth) / 2;
-        doc.text(csTitle, csTitleX, startY3);
-
-        const tableStartY3 = startY3 + 4;
-
-        const head3 = [[
-          'Survey',
-          'Strongly Agree (5)',
-          'Agree (4)',
-          'Neither Agree nor DisAgree (3)',
-          'Disagree (2)',
-          'Strongly Disagree (1)',
-          'Not Applicable',
-          'Total No. of Respondents',
-          'Total Rated Score',
-          'Ave. Rated Score',
-        ]];
-
-        // Expect each csRows entry shape:
-        // { label, sa5, a4, n3, d2, sd1, na, totalRespondents, totalRatedScore, averageScore }
-        const body3 = csRows.map((row) => [
-          row.label,
-          row.sa5,
-          row.a4,
-          row.n3,
-          row.d2,
-          row.sd1,
-          row.na,
-          row.totalRespondents,
-          row.totalRatedScore,
-          row.averageScore,
-        ]);
-
-        // Compute overall average rating across all SQDs
-        let overallTotalScore = 0;
-        let overallTotalRespondents = 0;
-        csRows.forEach((row) => {
-          const tr = typeof row.totalRatedScore === 'number' ? row.totalRatedScore : 0;
-          const resp = typeof row.totalRespondents === 'number' ? row.totalRespondents : 0;
-          overallTotalScore += tr;
-          overallTotalRespondents += resp;
-        });
-        const overallAverage = overallTotalRespondents > 0
-          ? (overallTotalScore / overallTotalRespondents).toFixed(2)
-          : '';
-
-        // Add "Overall Ratings" row at the bottom, with overall average in last column
-        body3.push([
-          'Overall Ratings',
-          '',
-          '',
-          '',
-          '',
-          '',
-          '',
-          '',
-          '',
-          overallAverage,
-        ]);
-
-        // Make this table a bit wider than the second one and center it.
-        const thirdTableWidth = 180; // close to full width
-        const thirdTableMargin = (pageWidth - thirdTableWidth) / 2;
-
-        doc.autoTable({
-          startY: tableStartY3,
-          head: head3,
-          body: body3,
-          theme: 'grid',
-          styles: {
-            fontSize: 7,
-            halign: 'left',
-            valign: 'middle',
-            cellPadding: 0.8,
-            fillColor: [255, 255, 255],
-            textColor: 0,
-            lineColor: 0,
-            lineWidth: 0.1,
-          },
-          headStyles: {
-            fontStyle: 'bold',
-            halign: 'center',
-            fillColor: [255, 255, 255],
-            textColor: 0,
-          },
-          alternateRowStyles: {
-            fillColor: [255, 255, 255],
-          },
-          tableLineWidth: 0.2,
-          tableLineColor: 0,
-          // Slightly widen the first column (Survey) so its right border moves right
-          columnStyles: {
-            // Survey column: wider, left-aligned text
-            0: { cellWidth: 35, halign: 'left' },
-            // All numeric columns: center the numbers
-            1: { halign: 'center' },
-            2: { halign: 'center' },
-            3: { halign: 'center' },
-            4: { halign: 'center' },
-            5: { halign: 'center' },
-            6: { halign: 'center' },
-            7: { halign: 'center' },
-            8: { halign: 'center' },
-            9: { halign: 'center' },
-          },
-          margin: { left: thirdTableMargin, right: thirdTableMargin },
-        });
-
-        // Signature block positioned at the top of the footer area
-        // Use a fixed Y based on the footer image position so it always
-        // sits just above the footer, regardless of table height.
-        let sigY = footerY - 43; // a bit above the footer image
-
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        // Move the signature block a little towards the center, but still
-        // visually anchored under the third table width
-        const sigLeft = thirdTableMargin + 20;
-
-        doc.text('Prepared by:', sigLeft, sigY);
-        sigY += 8;
-
-        doc.setFont(undefined, 'bold');
-        doc.text('CHEM JAYDER M. CABUNGCAL', sigLeft, sigY);
-        sigY += 5;
-
-        doc.setFont(undefined, 'normal');
-        doc.text('Information Technology Officer I', sigLeft, sigY);
-        sigY += 10;
-
-        doc.text('Noted by:', sigLeft, sigY);
-        sigY += 8;
-
-        doc.setFont(undefined, 'bold');
-        doc.text('CHRISTOPHER R. DIAZ, CESO V', sigLeft, sigY);
-        sigY += 5;
-
-        doc.setFont(undefined, 'normal');
-        doc.text('Schools Division Superintendent', sigLeft, sigY);
-      }
     }
+
+    // Make this table a bit wider than the first one so long text fits better.
+    // We'll give it an effective width of ~140mm and center it on the page
+    // by using symmetric left/right margins.
+    const secondTableWidth = 140;
+    const secondTableMargin = (pageWidth - secondTableWidth) / 2;
+
+    doc.autoTable({
+      startY: startY2,
+      head: head2,
+      body: body2,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        halign: 'left',
+        valign: 'middle',
+        cellPadding: 0.8,
+        fillColor: [255, 255, 255],
+        textColor: 0,
+        lineColor: 0,
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fontStyle: 'bold',
+        halign: 'center',
+        fillColor: [255, 255, 255],
+        textColor: 0,
+      },
+      alternateRowStyles: {
+        fillColor: [255, 255, 255],
+      },
+      tableLineWidth: 0.2,
+      tableLineColor: 0,
+      margin: { left: secondTableMargin, right: secondTableMargin },
+    });
+
+    // THIRD TABLE: CLIENT SATISFACTION (wider, more columns)
+    const csRows = Array.isArray(totals.clientSatisfactionRows)
+      ? totals.clientSatisfactionRows
+      : [];
+
+    const secondTableBottomY = (doc.lastAutoTable && doc.lastAutoTable.finalY) || (startY2 + 20);
+    const startY3 = secondTableBottomY + 8;
+
+    // Title above the table
+    const csTitle = 'CLIENT SATISFACTION';
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    const csTitleWidth = doc.getTextWidth(csTitle);
+    const csTitleX = (pageWidth - csTitleWidth) / 2;
+    doc.text(csTitle, csTitleX, startY3);
+
+    const tableStartY3 = startY3 + 4;
+
+    const head3 = [[
+      'Survey',
+      'Strongly Agree (5)',
+      'Agree (4)',
+      'Neither Agree nor DisAgree (3)',
+      'Disagree (2)',
+      'Strongly Disagree (1)',
+      'Not Applicable',
+      'Total No. of Respondents',
+      'Total Rated Score',
+      'Ave. Rated Score',
+    ]];
+
+    let body3;
+
+    if (csRows.length === 0) {
+      // Fallback row when there are no client satisfaction entries
+      body3 = [[
+        'No client satisfaction data',
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        '',
+      ]];
+    } else {
+      body3 = csRows.map((row) => [
+        row.label,
+        row.sa5,
+        row.a4,
+        row.n3,
+        row.d2,
+        row.sd1,
+        row.na,
+        row.totalRespondents,
+        row.totalRatedScore,
+        row.averageScore,
+      ]);
+
+      // Compute overall average rating across all SQDs
+      let overallTotalScore = 0;
+      let overallTotalRespondents = 0;
+      csRows.forEach((row) => {
+        const tr = typeof row.totalRatedScore === 'number' ? row.totalRatedScore : 0;
+        const resp = typeof row.totalRespondents === 'number' ? row.totalRespondents : 0;
+        overallTotalScore += tr;
+        overallTotalRespondents += resp;
+      });
+      const overallAverage = overallTotalRespondents > 0
+        ? (overallTotalScore / overallTotalRespondents).toFixed(2)
+        : '';
+
+      // Add "Overall Ratings" row at the bottom, with overall average in last column
+      body3.push([
+        'Overall Ratings',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        overallAverage,
+      ]);
+    }
+
+    // Make this table a bit wider than the second one and center it.
+    const thirdTableWidth = 180; // close to full width
+    const thirdTableMargin = (pageWidth - thirdTableWidth) / 2;
+
+    doc.autoTable({
+      startY: tableStartY3,
+      head: head3,
+      body: body3,
+      theme: 'grid',
+      styles: {
+        fontSize: 7,
+        halign: 'left',
+        valign: 'middle',
+        cellPadding: 0.8,
+        fillColor: [255, 255, 255],
+        textColor: 0,
+        lineColor: 0,
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fontStyle: 'bold',
+        halign: 'center',
+        fillColor: [255, 255, 255],
+        textColor: 0,
+      },
+      alternateRowStyles: {
+        fillColor: [255, 255, 255],
+      },
+      tableLineWidth: 0.2,
+      tableLineColor: 0,
+      // Slightly widen the first column (Survey) so its right border moves right
+      columnStyles: {
+        // Survey column: wider, left-aligned text
+        0: { cellWidth: 35, halign: 'left' },
+        // All numeric columns: center the numbers
+        1: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'center' },
+        4: { halign: 'center' },
+        5: { halign: 'center' },
+        6: { halign: 'center' },
+        7: { halign: 'center' },
+        8: { halign: 'center' },
+        9: { halign: 'center' },
+      },
+      margin: { left: thirdTableMargin, right: thirdTableMargin },
+    });
+
+    // Signature block positioned at the top of the footer area
+    // Use a fixed Y based on the footer image position so it always
+    // sits just above the footer, regardless of table height.
+    let sigY = footerY - 43; // a bit above the footer image
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    // Move the signature block a little towards the center, but still
+    // visually anchored under the third table width
+    const sigLeft = thirdTableMargin + 20;
+
+    doc.text('Prepared by:', sigLeft, sigY);
+    sigY += 8;
+
+    doc.setFont(undefined, 'bold');
+    doc.text('CHEM JAYDER M. CABUNGCAL', sigLeft, sigY);
+    sigY += 5;
+
+    doc.setFont(undefined, 'normal');
+    doc.text('Information Technology Officer I', sigLeft, sigY);
+    sigY += 10;
+
+    doc.text('Noted by:', sigLeft, sigY);
+    sigY += 8;
+
+    doc.setFont(undefined, 'bold');
+    doc.text('CHRISTOPHER R. DIAZ, CESO V', sigLeft, sigY);
+    sigY += 5;
+
+    doc.setFont(undefined, 'normal');
+    doc.text('Schools Division Superintendent', sigLeft, sigY);
   }
 
   // Expose as window.generatePaginatedPdf

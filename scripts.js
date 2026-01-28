@@ -13,8 +13,12 @@ const previewHeadersBtn = document.getElementById('previewHeadersBtn');
 const previewModal = document.getElementById('previewModal');
 const closePreviewModalBtn = document.getElementById('closePreviewModal');
 const modalTable = document.getElementById('excelTableModal');
-const modalThead = modalTable.querySelector('thead');
-const modalTbody = modalTable.querySelector('tbody');
+let modalThead = null, modalTbody = null;
+if (modalTable) {
+  modalThead = modalTable.querySelector('thead');
+  modalTbody = modalTable.querySelector('tbody');
+}
+
 
 // Headers preview modal elements
 const headersPreviewModal = document.getElementById('headersPreviewModal');
@@ -62,6 +66,14 @@ const servicesListContainerSocMob = document.getElementById('servicesListContain
 const servicesListSocMob = document.getElementById('servicesListSocMob');
 const servicesListContainerEducationFacilities = document.getElementById('servicesListContainerEducationFacilities');
 const servicesListEducationFacilities = document.getElementById('servicesListEducationFacilities');
+const servicesListContainerSDS = document.getElementById('servicesListContainerSDS');
+const servicesListSDS = document.getElementById('servicesListSDS');
+const servicesListContainerASDS = document.getElementById('servicesListContainerASDS');
+const servicesListASDS = document.getElementById('servicesListASDS');
+const servicesListContainerICT = document.getElementById('servicesListContainerICT');
+const servicesListICT = document.getElementById('servicesListICT');
+const servicesListContainerLegal = document.getElementById('servicesListContainerLegal');
+const servicesListLegal = document.getElementById('servicesListLegal');
 
 // Keep the latest parsed sheet in memory so we can compute report totals later
 let currentHeaderRow = null;
@@ -332,15 +344,47 @@ function computeReportTotals(office, period, serviceName) {
       officeColIndices.push(colIndex);
    }
 
+   // Generic 'Office transacted with' column (no number) used only
+   // for the newly added offices (SDS, ASDS, ICT, Legal).
+   const genericOfficeColIndex = headerRow.findIndex((header) => {
+      if (!header) return false;
+      return String(header).trim().toLowerCase() === 'office transacted with';
+   });
+
    function rowMatchesOffice(row) {
-      // Check if any of the "Office transacted with" columns match the target office
-      return officeColIndices.some((colIndex) => {
+      const target = office ? String(office).trim() : '';
+      if (!target) return false;
+
+      // First, check the original numbered "Office transacted withX" columns
+      const fromNumberedCols = officeColIndices.some((colIndex) => {
          if (colIndex === -1) return false;
          const value = row[colIndex];
          if (value === undefined || value === null) return false;
          const trimmed = String(value).trim();
-         return trimmed === office;
+         return trimmed === target;
       });
+
+      if (fromNumberedCols) return true;
+
+      // For the new offices only, also check the generic 'Office transacted with' column.
+      const lowerTarget = target.toLowerCase();
+      const isNewOffice =
+         lowerTarget === 'sds - schools division superintendent' ||
+         lowerTarget === 'asds - assistant schools division superintendent' ||
+         lowerTarget === 'ict' ||
+         lowerTarget === 'legal';
+
+      if (!isNewOffice || genericOfficeColIndex === -1) {
+         return false;
+      }
+
+      const genericValue = row[genericOfficeColIndex];
+      if (genericValue === undefined || genericValue === null) return false;
+      const cell = String(genericValue).trim().toLowerCase();
+      if (!cell) return false;
+
+      // Match when the cell contains the full office name from the sheet
+      return cell.includes(lowerTarget);
    }
 
    // Find all "Service availed" columns (used for per-service breakdowns)
@@ -825,6 +869,26 @@ function renderDistinctServices(headerRow, bodyRows) {
          list: servicesListEducationFacilities,
          officeName: 'Education Facilities',
       },
+      {
+         container: servicesListContainerSDS,
+         list: servicesListSDS,
+         officeName: 'SDS - Schools Division Superintendent',
+      },
+      {
+         container: servicesListContainerASDS,
+         list: servicesListASDS,
+         officeName: 'ASDS - Assistant Schools Division Superintendent',
+      },
+      {
+         container: servicesListContainerICT,
+         list: servicesListICT,
+         officeName: 'ICT',
+      },
+      {
+         container: servicesListContainerLegal,
+         list: servicesListLegal,
+         officeName: 'Legal',
+      },
    ];
 
    // Find all "Office transacted with" columns
@@ -838,21 +902,61 @@ function renderDistinctServices(headerRow, bodyRows) {
       officeColIndices.push(colIndex);
    }
 
-   // Find all "Service availed" columns
-   const serviceColIndices = [];
+   // Generic 'Office transacted with' column (no number) used only
+   // for the newly added offices (SDS, ASDS, ICT, Legal).
+   const genericOfficeColIndex = headerRow.findIndex((header) => {
+      if (!header) return false;
+      return String(header).trim().toLowerCase() === 'office transacted with';
+   });
+
+   // Find all "Service availed" columns (generic list) – used for
+   // legacy offices. New offices may override this with a specific
+   // column per office.
+   const allServiceColIndices = [];
    headerRow.forEach((header, index) => {
       if (!header) return;
       const text = String(header).toLowerCase();
       if (text.includes('service availed')) {
-         serviceColIndices.push(index);
+         allServiceColIndices.push(index);
       }
    });
-
-   // console.log('Service availed column indices:', serviceColIndices);
 
    configs.forEach(({ container, list, officeName }) => {
       if (!container || !list) {
          return;
+      }
+
+      // Decide which "Service availed" columns this office should use.
+      // For the four new offices (SDS, ASDS, ICT, Legal), we only use
+      // their dedicated column (e.g., "Service availed - ICT") so that
+      // we don't mix in services from other offices.
+      let serviceColIndices = allServiceColIndices;
+      const lowerName = officeName.toLowerCase().trim();
+      if (
+         lowerName === 'sds - schools division superintendent' ||
+         lowerName === 'asds - assistant schools division superintendent' ||
+         lowerName === 'ict' ||
+         lowerName === 'legal'
+      ) {
+         let specificColIndex = headerRow.findIndex((header) => {
+            if (!header) return false;
+            const expected = `service availed - ${officeName}`.toLowerCase().trim();
+            return String(header).trim().toLowerCase() === expected;
+         });
+
+         // Fallback: try first word of officeName (e.g., "ICT")
+         if (specificColIndex === -1) {
+            const firstWord = officeName.split(' ')[0].trim();
+            const expected = `service availed - ${firstWord}`.toLowerCase();
+            specificColIndex = headerRow.findIndex((header) => {
+               if (!header) return false;
+               return String(header).trim().toLowerCase() === expected;
+            });
+         }
+
+         if (specificColIndex !== -1) {
+            serviceColIndices = [specificColIndex];
+         }
       }
 
       // Extract services for this specific office
@@ -866,12 +970,32 @@ function renderDistinctServices(headerRow, bodyRows) {
                const value = row[colIndex];
                if (value !== undefined && value !== null && String(value).trim() !== '') {
                   const officeInCell = String(value).trim();
-                  if (officeInCell === officeName) {
+                  if (officeInCell.toLowerCase().includes(officeName.toLowerCase().trim())) {
                      hasOfficeTransaction = true;
                   }
                }
             }
          });
+
+         // Additionally, for the newly added offices, also check the
+         // generic 'Office transacted with' column if it exists.
+         if (!hasOfficeTransaction && genericOfficeColIndex !== -1) {
+            const lowerName = officeName.toLowerCase().trim();
+            if (
+               lowerName === 'sds - schools division superintendent' ||
+               lowerName === 'asds - assistant schools division superintendent' ||
+               lowerName === 'ict' ||
+               lowerName === 'legal'
+            ) {
+               const value = row[genericOfficeColIndex];
+               if (value !== undefined && value !== null && String(value).trim() !== '') {
+                  const officeInCell = String(value).trim().toLowerCase();
+                  if (officeInCell.includes(lowerName)) {
+                     hasOfficeTransaction = true;
+                  }
+               }
+            }
+         }
 
          // If this row has a transaction for our office, extract the services
          if (hasOfficeTransaction) {
@@ -919,6 +1043,7 @@ function renderDistinctServices(headerRow, bodyRows) {
                window.generatePaginatedPdf({
                   preview: true,
                   office: officeName,
+                  serviceName: service,
                   period,
                   totals,
                });
@@ -936,34 +1061,81 @@ function renderDistinctServices(headerRow, bodyRows) {
 function displayOfficesFromTransactedColumns(headerRow, bodyRows) {
    // console.log('=== OFFICES FROM "Office transacted with" COLUMNS ===');
    
-   // Find all "Office transacted with" columns
-   const officeColIndices = [];
-   for (let i = 1; i <= 4; i++) {
-      const colIndex = headerRow.findIndex((header) => {
-         if (!header) return false;
-         const text = String(header).toLowerCase();
-         return text.includes(`office transacted with${i}`);
-      });
-      officeColIndices.push(colIndex);
-   }
-   
-   // console.log('Office transacted with column indices:', officeColIndices);
-   
-   // Extract unique offices from all transacted columns
+   // Find the column named exactly 'office transacted with' (case-insensitive, no numbers)
+   const officeColIndex = headerRow.findIndex((header) => {
+      if (!header) return false;
+      return String(header).trim().toLowerCase() === 'office transacted with';
+   });
+
    const uniqueOffices = new Set();
-   
-   bodyRows.forEach((row, rowIndex) => {
-      officeColIndices.forEach((colIndex, colNumber) => {
-         if (colIndex !== -1) {
-            const value = row[colIndex];
-            if (value !== undefined && value !== null && String(value).trim() !== '') {
-               const officeName = String(value).trim();
-               uniqueOffices.add(officeName);
-               // console.log(`Row ${rowIndex + 2}, Office transacted with${colNumber + 1}: "${officeName}"`);
-            }
+   if (officeColIndex !== -1) {
+      bodyRows.forEach((row) => {
+         const value = row[officeColIndex];
+         if (value !== undefined && value !== null && String(value).trim() !== '') {
+            const officeName = String(value).trim();
+            uniqueOffices.add(officeName);
          }
       });
+   }
+
+   // Print only those offices that do not end with a parenthesis (no sub office)
+   const officesNoSub = Array.from(uniqueOffices).filter(
+      (office) => !/\([^)]*\)\s*$/.test(office)
+   );
+   console.log('Offices without sub office/parenthesis in "office transacted with" column:', officesNoSub);
+
+   // Print all unique services for the column 'Service availed - SDS'
+   const sdsColIndex = headerRow.findIndex((header) => {
+      if (!header) return false;
+      return String(header).trim().toLowerCase() === 'service availed - sds';
    });
+   if (sdsColIndex !== -1) {
+      const sdsServices = new Set();
+      bodyRows.forEach((row) => {
+         const val = row[sdsColIndex];
+         if (val !== undefined && val !== null && String(val).trim() !== '') {
+            sdsServices.add(String(val).trim());
+         }
+      });
+      console.log('Services for SDS:', Array.from(sdsServices));
+   } else {
+      console.log('No column named "Service availed - SDS" found.');
+   }
+
+   // For each such office, find its corresponding 'Service availed - ...' column and print unique services
+   const officeServicesMap = {};
+   officesNoSub.forEach((officeName) => {
+      // Find the column for this office (match if header contains the office name)
+      let serviceColIndex = headerRow.findIndex((header) => {
+         if (!header) return false;
+         // Build expected column name
+         const expectedCol = `service availed - ${officeName}`.toLowerCase().trim();
+         return String(header).trim().toLowerCase() === expectedCol;
+      });
+      // Fallback: try matching by first word of officeName
+      if (serviceColIndex === -1) {
+         const firstWord = officeName.split(' ')[0].trim();
+         const expectedCol = `service availed - ${firstWord}`.toLowerCase();
+         serviceColIndex = headerRow.findIndex((header) => {
+            if (!header) return false;
+            return String(header).trim().toLowerCase() === expectedCol;
+         });
+      }
+      if (serviceColIndex !== -1) {
+         const uniqueServices = new Set();
+         bodyRows.forEach((row) => {
+            const val = row[serviceColIndex];
+            if (val !== undefined && val !== null && String(val).trim() !== '') {
+               uniqueServices.add(String(val).trim());
+            }
+         });
+         officeServicesMap[officeName] = Array.from(uniqueServices);
+      } else {
+         officeServicesMap[officeName] = [];
+      }
+   });
+   console.log('Specific services for each office (no sub office):', officeServicesMap);
+
    
    // console.log('\n=== UNIQUE OFFICES FOUND ===');
    // console.log(`Total unique offices: ${uniqueOffices.size}`);
@@ -1052,6 +1224,7 @@ function setupViewAllServiceReportsButton() {
             const totals = computeReportTotals(office, period, serviceName);
             multiOffices.push({
                office,
+               serviceName,
                period,
                totals,
             });
@@ -1088,6 +1261,10 @@ function hideAllServiceContainers() {
       servicesListContainerSMME,
       servicesListContainerSocMob,
       servicesListContainerEducationFacilities,
+      servicesListContainerSDS,
+      servicesListContainerASDS,
+      servicesListContainerICT,
+      servicesListContainerLegal,
    ];
 
    containers.forEach((c) => {

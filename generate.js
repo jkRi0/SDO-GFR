@@ -21,7 +21,12 @@
       bodyHeight,
     } = shared;
 
-    const { office = '(not specified)', period = '(not specified)', totals = {} } = opts;
+    const {
+      office = '(not specified)',
+      period = '(not specified)',
+      totals = {},
+      serviceName = null,
+    } = opts;
 
     function drawHeaderFooter() {
       // Header image (preserve aspect ratio)
@@ -78,7 +83,10 @@
     doc.setFont(undefined, 'normal');
 
     const officeLabel = 'Office Service Availed: ';
-    const officeValue = office;
+    // For display, shorten offices like
+    // "SDS - Schools Division Superintendent" to just "SDS".
+    const shortOffice = String(office).split(' - ')[0].trim();
+    const officeValue = serviceName ? `${shortOffice} - ${serviceName}` : shortOffice;
     const periodLabel = 'Rating Period: ';
     const periodValue = period;
 
@@ -107,38 +115,68 @@
     const periodValueWidth = doc.getTextWidth(periodValue);
     const officeLineRightMargin = 15;
 
-    // If office + period would overlap, move period to the next line.
-    const totalNeededWidth = officeLineLeftMargin + officeTextWidth + periodTextWidth + officeLineRightMargin;
-    if (totalNeededWidth <= pageWidth) {
-      // Single-line layout: office on left, rating period on right
-      doc.text(officeText, leftX, y);
-      const officeValueStartX = leftX + officeLabelWidth;
-      doc.line(officeValueStartX, y + 1.5, officeValueStartX + officeValueWidth, y + 1.5);
+    const maxLineWidth = pageWidth - officeLineLeftMargin - officeLineRightMargin;
 
-      const rightX = pageWidth - officeLineRightMargin - periodTextWidth;
-      doc.text(periodText, rightX, y);
+    // If the full "Office Service Availed: <office> - <service>" text
+    // is too wide, place the service (and period) on separate lines.
+    if (officeTextWidth > maxLineWidth && serviceName) {
+      // Line 1: label + shortened office only
+      const officeOnlyText = officeLabel + shortOffice;
+      const officeOnlyLabelWidth = doc.getTextWidth(officeLabel);
+      const officeOnlyValueWidth = doc.getTextWidth(shortOffice);
+      doc.text(officeOnlyText, leftX, y);
+      const officeOnlyValueStartX = leftX + officeOnlyLabelWidth;
+      doc.line(officeOnlyValueStartX, y + 1.5, officeOnlyValueStartX + officeOnlyValueWidth, y + 1.5);
 
-      // Underline the rating period value (e.g., Jan-Dec)
-      const periodValueStartX = rightX + periodLabelWidth;
-      doc.line(periodValueStartX, y + 1.5, periodValueStartX + periodValueWidth, y + 1.5);
-
+      // Line 2: Service name
       y += 5;
-    } else {
-      // Two-line layout: office on first line, rating period directly under it (left-aligned)
-      doc.text(officeText, leftX, y);
-      const officeValueStartX = leftX + officeLabelWidth;
-      doc.line(officeValueStartX, y + 1.5, officeValueStartX + officeValueWidth, y + 1.5);
+      const serviceLabel = 'Service Availed: ';
+      const serviceText = serviceLabel + serviceName;
+      doc.text(serviceText, leftX, y);
 
-      // Move down for the period line and print it under the office text
+      // Line 3: Rating period (left-aligned)
       y += 5;
       doc.text(periodText, leftX, y);
-
-      // Underline the rating period value when wrapped
       const periodValueStartXWrapped = leftX + periodLabelWidth;
       doc.line(periodValueStartXWrapped, y + 1.5, periodValueStartXWrapped + periodValueWidth, y + 1.5);
 
-      // Extra space before the table when wrapped
+      // Extra space before the table when wrapped this way
       y += 4;
+    } else {
+      // Existing behaviour: try to keep office + period on one line,
+      // otherwise move period to the next line.
+      const totalNeededWidth = officeLineLeftMargin + officeTextWidth + periodTextWidth + officeLineRightMargin;
+      if (totalNeededWidth <= pageWidth) {
+        // Single-line layout: office on left, rating period on right
+        doc.text(officeText, leftX, y);
+        const officeValueStartX = leftX + officeLabelWidth;
+        doc.line(officeValueStartX, y + 1.5, officeValueStartX + officeValueWidth, y + 1.5);
+
+        const rightX = pageWidth - officeLineRightMargin - periodTextWidth;
+        doc.text(periodText, rightX, y);
+
+        // Underline the rating period value (e.g., Jan-Dec)
+        const periodValueStartX = rightX + periodLabelWidth;
+        doc.line(periodValueStartX, y + 1.5, periodValueStartX + periodValueWidth, y + 1.5);
+
+        y += 5;
+      } else {
+        // Two-line layout: office on first line, rating period directly under it (left-aligned)
+        doc.text(officeText, leftX, y);
+        const officeValueStartX = leftX + officeLabelWidth;
+        doc.line(officeValueStartX, y + 1.5, officeValueStartX + officeValueWidth, y + 1.5);
+
+        // Move down for the period line and print it under the office text
+        y += 5;
+        doc.text(periodText, leftX, y);
+
+        // Underline the rating period value when wrapped
+        const periodValueStartXWrapped = leftX + periodLabelWidth;
+        doc.line(periodValueStartXWrapped, y + 1.5, periodValueStartXWrapped + periodValueWidth, y + 1.5);
+
+        // Extra space before the table when wrapped
+        y += 4;
+      }
     }
 
     // Summary table

@@ -411,17 +411,14 @@
         ? (overallTotalScore / overallTotalRespondents).toFixed(2)
         : '';
 
-      // Add "Overall Ratings" row at the bottom, with overall average in last column
+      // Add "Overall Ratings" row at the bottom with merged cells:
+      // first 9 columns merged into one label cell, last column shows the overall average
       body3.push([
-        'Overall Ratings',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
+        {
+          content: 'Overall Ratings',
+          colSpan: 9,
+          styles: { halign: 'right' },
+        },
         overallAverage,
       ]);
     }
@@ -477,13 +474,13 @@
     // Signature block positioned at the top of the footer area
     // Use a fixed Y based on the footer image position so it always
     // sits just above the footer, regardless of table height.
-    let sigY = footerY - 43; // a bit above the footer image
+    let sigY = footerY - 50; // a bit above the footer image
 
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
     // Move the signature block a little towards the center, but still
     // visually anchored under the third table width
-    const sigLeft = thirdTableMargin + 20;
+    const sigLeft = secondTableMargin + -10;
 
     doc.text('Prepared by:', sigLeft, sigY);
     sigY += 8;

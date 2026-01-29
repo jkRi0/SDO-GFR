@@ -460,11 +460,22 @@
         overallAverage,
       ]);
 
-      // Add an extra blank row under the Overall Ratings row, with all
-      // columns merged into a single empty cell to create visual spacing.
+      // Add an extra row under the Overall Ratings row. If remarks are
+      // provided in totals.remarks (up to three), display them here as
+      // a multi-line block. Otherwise, keep this as a blank spacing row.
+      let remarksText = '';
+      if (Array.isArray(totals.remarks) && totals.remarks.length > 0) {
+        const picked = totals.remarks.slice(0, 3);
+        const lines = ['Descriptive Remarks:'];
+        picked.forEach((remark, idx) => {
+          lines.push(`${idx + 1}. "${remark}"`);
+        });
+        remarksText = lines.join('\n');
+      }
+
       body3.push([
         {
-          content: '',
+          content: remarksText,
           colSpan: 10,
           styles: { halign: 'left' },
         },

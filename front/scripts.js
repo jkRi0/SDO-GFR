@@ -287,6 +287,7 @@ function computeReportTotals(office, period, serviceName) {
       // Will be filled below
       serviceRows: [],
       ccTotals: null,
+      remarks: [],
    };
 
    if (!currentHeaderRow || !currentBodyRows || currentBodyRows.length === 0) {
@@ -309,6 +310,13 @@ function computeReportTotals(office, period, serviceName) {
       if (!h) return false;
       const text = String(h).toLowerCase();
       return text.includes('customer type') || text.includes('client type') || text.includes('type of customer');
+   });
+
+   // Remarks / comments column (used for descriptive remarks in the PDF)
+   const remarksColIndex = headerRow.findIndex((h) => {
+      if (!h) return false;
+      const text = String(h).toLowerCase();
+      return text.includes('remarks') || text.includes('comment');
    });
 
    // Fallback: if we couldn't find an Age column by header text but we do have a Sex column,
@@ -545,6 +553,17 @@ function computeReportTotals(office, period, serviceName) {
       // Count respondent for CC totals, demographics, etc. (already filtered
       // by office, period, and optionally service).
       totalRespondents += 1;
+
+      // Collect up to three distinct non-empty remarks for this office/period/service
+      if (remarksColIndex !== -1 && totals.remarks.length < 3) {
+         const rawRemark = row[remarksColIndex];
+         if (rawRemark !== undefined && rawRemark !== null) {
+            const remarkText = String(rawRemark).trim();
+            if (remarkText && !totals.remarks.includes(remarkText)) {
+               totals.remarks.push(remarkText);
+            }
+         }
+      }
 
       // Service availed counts
       if (servicesInRow.length) {

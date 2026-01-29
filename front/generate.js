@@ -459,6 +459,16 @@
         },
         overallAverage,
       ]);
+
+      // Add an extra blank row under the Overall Ratings row, with all
+      // columns merged into a single empty cell to create visual spacing.
+      body3.push([
+        {
+          content: '',
+          colSpan: 10,
+          styles: { halign: 'left' },
+        },
+      ]);
     }
 
     // Make this table a bit wider than the second one and center it.
